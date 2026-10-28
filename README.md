@@ -8,14 +8,14 @@ URN 为 iOS App 提供共享 React Native 运行时、多页面独立连接、�
 - 工具：`leo-urn-tooling`、`create-leo-urn`
 - 基线：React Native 0.87.0、React 19.2.3、iOS 15.1+
 
-当前为公开发布候选，尚未发布。以下步骤在依赖和本库正式发布后使用。
+0.1.0 为预览版本，首次公开发布使用 next 标签。具体是否可安装，以 npm registry 和公开 Specs 索引为准。
 
 ## 安装
 
 App 同时安装 JS 包及所要求的 Aeris Core/RN 精确版本。原生代码由 `leo-urn` 内的 `LeoURN.podspec` 自动链接，避免另外安装不同来源的同名 Pod。
 
 ```sh
-npm install leo-urn react@19.2.3 react-native@0.87.0 aeris-client-core@0.25.0 aeris-react-native@0.25.0
+npm install --save-exact leo-urn@0.1.0 react@19.2.3 react-native@0.87.0 aeris-client-core@0.25.0 aeris-react-native@0.25.0
 ```
 
 生产工程使用经过验证的精确版本和锁文件，不将上述命令理解为任意最新版均兼容。Aeris 0.25.0 的源码候选已准备；正式安装仍需等待 npm/Pod 发布完成。

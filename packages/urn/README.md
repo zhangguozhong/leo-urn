@@ -1,6 +1,6 @@
 # URN SDK
 
-`leo-urn` 与同包的 `LeoURN.podspec` 提供 iOS 共享 RN Runtime 和独立页面连接。当前 `0.1.0` 是本地候选，尚未发布 npm 包、Pod 或 SDK tag；使用仓库 workspace、path 或经记录的 tarball 进行验收。固定 React `19.2.3`、RN `0.87.0`、Hermes/Fabric、最低 iOS `15.1`，外部 Aeris 来源见[兼容文档](../../docs/URN与Aeris兼容说明.md)。
+`leo-urn` 与同包的 `LeoURN.podspec` 提供 iOS 共享 RN Runtime 和独立页面连接。`0.1.0` 为预览版本，首次分发使用 next；具体可用版本以 npm registry 与公开 Specs 索引为准。固定 React `19.2.3`、RN `0.87.0`、Hermes/Fabric、最低 iOS `15.1`，Aeris Core/RN 固定为 0.25.0。
 
 SDK 源码位于 `packages/urn`。原生按 `Container`、`Routing`、`ReactNative`、`Modules` 分组；`URNReactHost` 封装 RN 宿主接线，JS 的 `PageCoordinator` 管理同一轮次的页面与关闭流程。它们是容器的内部实现，业务接入继续使用下文公开入口。
 
@@ -90,7 +90,6 @@ cleanup 超时或失败保留记录及 Root，返回失败；已知失败时重�
 
 从集成 App 解析 RN 与自动链接，不要求 App/node_modules 实际存在。App 显式安装 SDK、业务包、Aeris Core/RN 和原生插件并集，React/RN/SDK 在业务包中使用 peer，统一由安装根及 lockfile 决定。新增原生依赖后重新 pod install 并编译。
 
-完整可运行入口见[iOS 集成示例](../../examples/ios-host/URN/Integration/README.md)，两种业务组织方式见[接入指南](../../docs/URN业务接入指南.md)。Android、多 Runtime、跨 Scene 和热 OTA 尚未实现。
 
 ## 统一预算与诊断
 
@@ -136,4 +135,4 @@ maxPages 决定本轮有效容量且不能大于 channelBudget.maxChannels。默
 
 ## 安装包接入
 
-JS、类型、Codegen 和 iOS 源码随同一 `leo-urn` 包分发。Pod 使用 node_modules 中的 LeoURN.podspec 自动链接，不要再手动引入另一版本的 URN Pod。当前为未发布候选；完整版本约束、制品准备和独立验收步骤见[安装包与 Pod 验收](https://github.com/zhangguozhong/URN/blob/main/docs/URN安装包与Pod验收.md)。私有仓库文档需要读取权限。
+JS、类型、Codegen 和 iOS 源码随同一 `leo-urn` 包分发。Pod 使用 node_modules 中的 LeoURN.podspec 自动链接，不要再手动引入另一版本的 URN Pod。预览版使用说明见[公开源码仓库](https://github.com/zhangguozhong/leo-urn)。

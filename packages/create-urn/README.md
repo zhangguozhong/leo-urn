@@ -1,9 +1,9 @@
 # create-leo-urn
 
-为已有 iOS App 创建 URN 业务工程。RN 0.87.0 / React 19.2.3 / iOS 15.1+，当前为未发布本地候选。
+为已有 iOS App 创建 URN 业务工程。RN 0.87.0 / React 19.2.3 / iOS 15.1+，0.1.0 为预览版本。
 
 ```sh
-# 从已验证的本地 create 制品启动，不依赖另一个未发布 npm 包。
+# 从已验证的本地 create 制品启动，不依赖预先安装的全局工具。
 npm exec --yes --package=/absolute/path/create-leo-urn-0.1.0.tgz -- \
   create-leo-urn ./order-rn \
   --ios-project ./HostApp/HostApp.xcodeproj --target HostApp \
@@ -18,4 +18,4 @@ profile 包含四个 App 工具/SDK tarball 的 name/version/specifier/SHA256、
 
 Pod 安装完成后执行 npm run baseline:prepare，审阅实际锁与工具链捕获的基线，再 baseline:check。不会填入样例 hash 或自动覆盖旧基线。
 
-SDK 的 iOS 源码由 node_modules/leo-urn 中的 Podspec 自动链接；Aeris 尚未发布的必要源码由工具固定下载到 .urn/aeris 并供 Pod :path 使用，不要求复制 vendor/urn。
+SDK 的 iOS 源码由 node_modules/leo-urn 中的 Podspec 自动链接；Aeris 的固定公开源码由工具固定下载到 .urn/aeris 并供 Pod :path 使用，不要求复制 vendor/urn。
