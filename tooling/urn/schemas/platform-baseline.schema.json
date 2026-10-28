@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:leo-urn:schemas:platform-baseline",
+  "title": "URN 0.1.0 platform baseline",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "baselineId",
+    "versions",
+    "aeris",
+    "toolchain",
+    "minIos",
+    "architecture",
+    "nativePlugins",
+    "locks"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "baselineId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,80}$" },
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["react", "reactNative", "urnJs", "urnPod", "aeris"],
+      "properties": {
+        "react": { "const": "19.2.3" },
+        "reactNative": { "const": "0.87.0" },
+        "urnJs": { "const": "0.1.0" },
+        "urnPod": { "const": "0.1.0" },
+        "aeris": { "const": "0.25.0" }
+      }
+    },
+    "aeris": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceRef", "capabilitiesManifest"],
+      "properties": {
+        "sourceRef": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "capabilitiesManifest": { "type": "string", "minLength": 1 }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node", "xcode", "cocoaPods"],
+      "properties": {
+        "node": { "$ref": "#/$defs/version" },
+        "xcode": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$" },
+        "cocoaPods": { "$ref": "#/$defs/version" }
+      }
+    },
+    "minIos": { "const": "15.1" },
+    "architecture": { "const": "new" },
+    "nativePlugins": { "type": "array", "items": { "$ref": "#/$defs/plugin" } },
+    "locks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "pods"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^(?:@[a-z0-9._-]+/)?[a-z0-9][a-z0-9._-]*$" },
+        "version": { "$ref": "#/$defs/version" },
+        "pods": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "version"],
+            "properties": {
+              "name": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_./+-]*$" },
+              "version": { "$ref": "#/$defs/version" }
+            }
+          }
+        },
+        "codegen": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "type"],
+          "properties": {
+            "name": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
+            "type": { "enum": ["modules", "components", "all"] }
+          }
+        }
+      }
+    }
+  }
+}

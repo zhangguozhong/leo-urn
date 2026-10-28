@@ -1,0 +1,38 @@
+{
+  "name": "leo-urn-tooling",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "URN \u5de5\u7a0b\u4f9d\u8d56\u3001\u57fa\u7ebf\u4e0e iOS bundle \u68c0\u67e5\u5de5\u5177",
+  "license": "MIT",
+  "bin": {
+    "urn": "bin/urn.mjs"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "prepack": "node build.mjs"
+  },
+  "dependencies": {
+    "semver": "7.8.5"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhangguozhong/leo-urn.git",
+    "directory": "packages/urn-tooling"
+  },
+  "homepage": "https://github.com/zhangguozhong/leo-urn",
+  "bugs": {
+    "url": "https://github.com/zhangguozhong/leo-urn/issues"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "name": "LeoURN",
+  "module_name": "URN",
+  "version": "0.1.0",
+  "summary": "Shared React Native runtime with isolated native pages and Aeris connections",
+  "homepage": "https://github.com/zhangguozhong/leo-urn",
+  "license": {
+    "type": "MIT",
+    "file": "packages/urn/LICENSE"
+  },
+  "authors": "zhangguozhong",
+  "source": {
+    "git": "https://github.com/zhangguozhong/leo-urn.git",
+    "tag": "0.1.0"
+  },
+  "platforms": {
+    "ios": "15.1"
+  },
+  "swift_versions": "6.0",
+  "source_files": [
+    "packages/urn/ios/**/*.{h,m,mm,swift}"
+  ],
+  "public_header_files": [
+    "packages/urn/ios/ReactNative/URNReactHost.h"
+  ],
+  "private_header_files": [
+    "packages/urn/ios/Modules/*.h"
+  ],
+  "dependencies": {
+    "AerisHost/ReactNative": [
+      "= 0.25.0"
+    ],
+    "Aeris/UIKitContext": [
+      "= 0.25.0"
+    ],
+    "React-Core": [
+      "= 0.87.0"
+    ],
+    "React-RCTFabric": [],
+    "ReactCodegen": [],
+    "RCTRequired": [],
+    "RCTTypeSafety": [],
+    "React-bridging": [],
+    "ReactCommon/turbomodule/core": [],
+    "React-NativeModulesApple": [],
+    "Yoga": [],
+    "React-Fabric": [],
+    "React-graphics": [],
+    "React-utils": [],
+    "React-featureflags": [],
+    "React-debug": [],
+    "React-ImageManager": [],
+    "React-rendererdebug": [],
+    "React-jsi": [],
+    "React-renderercss": [],
+    "hermes-engine": [],
+    "glog": [],
+    "boost": [],
+    "DoubleConversion": [],
+    "fast_float": [],
+    "fmt": [],
+    "RCT-Folly": [],
+    "SocketRocket": [],
+    "React-RCTAppDelegate": [
+      "= 0.87.0"
+    ]
+  },
+  "compiler_flags": "-DRCT_NEW_ARCH_ENABLED=1",
+  "pod_target_xcconfig": {
+    "HEADER_SEARCH_PATHS": "\"$(PODS_ROOT)/Headers/Private/Yoga\"",
+    "CLANG_CXX_LANGUAGE_STANDARD": "c++20",
+    "OTHER_CPLUSPLUSFLAGS": "$(inherited) -DRCT_NEW_ARCH_ENABLED=1 ",
+    "OTHER_SWIFT_FLAGS": "$(inherited) -DRCT_NEW_ARCH_ENABLED"
+  },
+  "swift_version": "6.0"
+}

@@ -1,0 +1,60 @@
+{
+  "name": "leo-urn",
+  "version": "0.1.0",
+  "description": "Shared React Native runtime with isolated native pages and Aeris connections",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "react-native": "./dist/index.js",
+  "files": [
+    "dist",
+    "src",
+    "ios",
+    "config",
+    "LeoURN.podspec",
+    "LICENSE",
+    "README.md",
+    "tsconfig.json"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "react-native": "./dist/index.js",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test:features": "npm run build && node --test ../../tests/urn/feature-registry.test.mjs && tsc -p ../../tests/urn/tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch",
+    "test:codegen": "node ../../tooling/urn/codegen-verify.mjs",
+    "test:channels": "npm run build && node --test ../../tests/urn/channel-*.test.mjs ../../tests/urn/container-*.test.mjs",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.87.0",
+    "aeris-client-core": "0.25.0",
+    "aeris-react-native": "0.25.0"
+  },
+  "codegenConfig": {
+    "name": "URNSpec",
+    "type": "modules",
+    "jsSrcsDir": "src/specs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhangguozhong/leo-urn.git",
+    "directory": "packages/urn"
+  },
+  "homepage": "https://github.com/zhangguozhong/leo-urn",
+  "bugs": {
+    "url": "https://github.com/zhangguozhong/leo-urn/issues"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "create-leo-urn",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "\u5728\u5df2\u6709 iOS App \u65c1\u521b\u5efa\u56fa\u5b9a\u57fa\u7ebf\u7684 URN \u5de5\u7a0b",
+  "license": "MIT",
+  "bin": {
+    "create-leo-urn": "bin/create-leo-urn.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "prepack": "node build.mjs"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhangguozhong/leo-urn.git",
+    "directory": "packages/create-urn"
+  },
+  "homepage": "https://github.com/zhangguozhong/leo-urn",
+  "bugs": {
+    "url": "https://github.com/zhangguozhong/leo-urn/issues"
+  }
+}
