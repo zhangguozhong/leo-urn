@@ -38,3 +38,27 @@ use_react_native!(:path => config[:reactNativePath], :app_path => app_root)
 ## 许可
 
 MIT，各包包含 LICENSE。此源码交付目录不包含内部设计文档、测试日志或 Git 历史。
+
+## 固定 profile 与脚手架
+
+首次接入已有 iOS App，可下载本版本的固定 profile，再运行已发布脚手架。先用 Xcode 创建或选定真实 App target；目录名由调用者指定。
+
+```sh
+curl -fL https://raw.githubusercontent.com/zhangguozhong/leo-urn/main/profiles/urn-rn087-0.1.0.json -o urn-profile.json
+npm exec --yes --package=create-leo-urn@0.1.0 -- create-leo-urn ./rn-integration \
+  --ios-project ./HostApp/HostApp.xcodeproj --target HostApp \
+  --profile ./urn-profile.json --install
+```
+
+profile 固定五个 npm 制品的精确版本与 SHA256，以及 Aeris 的公开源码 commit。脚手架当前生成的 Podfile 示例使用下载到 `.urn/aeris` 的固定源码；若采用公开 Specs，请把三个 Aeris 原生 Pod 的 `:path` 声明改为下列固定版本来源，保留 RN 自动链接及唯一 post_install：
+
+```ruby
+source 'https://github.com/zhangguozhong/leo-podspecs.git'
+source 'https://cdn.cocoapods.org/'
+# App target 内：
+pod 'AerisContracts', '= 0.25.0'
+pod 'Aeris', '= 0.25.0'
+pod 'AerisHost', '= 0.25.0'
+```
+
+`LeoURN` 与 `AerisRN` 随 npm 安装自动链接，不重复手动声明其他来源。Swift 仍使用 `import URN`。profile 文件名带版本号，后续版本新增文件，不覆盖旧版本。

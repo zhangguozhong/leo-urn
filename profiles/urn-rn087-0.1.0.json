@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "baselineId": "urn-rn087",
+  "packages": [
+    {
+      "name": "leo-urn",
+      "version": "0.1.0",
+      "specifier": "leo-urn@0.1.0",
+      "sha256": "426fe102cf7d09d5cdead737fb6601d93cdd8803138f538855f82026a2965a36"
+    },
+    {
+      "name": "leo-urn-tooling",
+      "version": "0.1.0",
+      "specifier": "leo-urn-tooling@0.1.0",
+      "sha256": "f3a278b47a28b579e4a65c5a44e5aef61f2edcbd05467a90487f9cf41e90a128"
+    },
+    {
+      "name": "aeris-client-core",
+      "version": "0.25.0",
+      "specifier": "aeris-client-core@0.25.0",
+      "sha256": "863ef34545beba790ac4078e5fa9784cee52e82832f9fcce13b14321334837ad"
+    },
+    {
+      "name": "aeris-react-native",
+      "version": "0.25.0",
+      "specifier": "aeris-react-native@0.25.0",
+      "sha256": "2b31de36d5f82b586d459f1f969eec11bb4cac5e18f6f130b03ffeed8bec931b"
+    }
+  ],
+  "bootstrap": {
+    "name": "create-leo-urn",
+    "version": "0.1.0",
+    "specifier": "create-leo-urn@0.1.0",
+    "sha256": "d2ed7385bb0d3cd8545441531646a0275a319662e901e2384f6a2ddbcc876f8d"
+  },
+  "aeris": {
+    "source": {
+      "repository": "https://github.com/zhangguozhong/aeris-sdk.git",
+      "ref": "e1257acd6507fd220f1e5b5d39751501ef87eabe",
+      "availability": "published",
+      "branch": "main"
+    },
+    "nativeVersion": "0.25.0",
+    "nativePods": [
+      "Aeris",
+      "AerisContracts",
+      "AerisHost/ReactNative",
+      "AerisRN"
+    ],
+    "closing": {
+      "protocol": "AerisClosingMessageReceiver",
+      "verified": true,
+      "availability": "published",
+      "tests": [
+        "ClosingWindowTests",
+        "HostVerify.closingReceiverTests"
+      ],
+      "swiftTests": 213,
+      "swiftSuites": 35,
+      "fullSuiteRef": "e1257acd6507fd220f1e5b5d39751501ef87eabe"
+    },
+    "packages": [
+      {
+        "name": "aeris-client-core",
+        "version": "0.25.0",
+        "file": "aeris-client-core-0.25.0.tgz",
+        "sourceRef": "e1257acd6507fd220f1e5b5d39751501ef87eabe",
+        "sha256": "863ef34545beba790ac4078e5fa9784cee52e82832f9fcce13b14321334837ad",
+        "requiredExports": [
+          "./ClientCore",
+          "./protocol"
+        ]
+      },
+      {
+        "name": "aeris-react-native",
+        "version": "0.25.0",
+        "file": "aeris-react-native-0.25.0.tgz",
+        "sourceRef": "e1257acd6507fd220f1e5b5d39751501ef87eabe",
+        "sha256": "2b31de36d5f82b586d459f1f969eec11bb4cac5e18f6f130b03ffeed8bec931b",
+        "requiredExports": [
+          "./RNAdapter"
+        ]
+      }
+    ]
+  }
+}
