@@ -1,6 +1,6 @@
 {
   "name": "create-leo-urn",
-  "version": "0.2.0-preview.1",
+  "version": "0.2.0-preview.2",
   "type": "module",
   "description": "为已有原生App或独立调试壳创建固定基线的URN工程（iOS/Android）",
   "license": "MIT",

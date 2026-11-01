@@ -10,14 +10,14 @@ async function prepare() {
 const app = path.dirname(fileURLToPath(import.meta.url));
 const profile = JSON.parse(await fs.readFile(path.join(app, 'urn.profile.json'), 'utf8'));
 const item = profile.bootstrap;
-if (!item || item.name !== 'create-leo-urn' || item.version !== '0.2.0-preview.1' || !/^[a-f0-9]{64}$/.test(item.sha256 ?? '')) throw new Error('URN bootstrap 来源非法');
+if (!item || item.name !== 'create-leo-urn' || item.version !== '0.2.0-preview.2' || !/^[a-f0-9]{64}$/.test(item.sha256 ?? '')) throw new Error('URN bootstrap 来源非法');
 const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'urn-bootstrap-'));
 try {
   let archive;
   if (item.specifier?.startsWith('file:')) {
     archive = path.resolve(app, item.specifier.slice(5));
   } else {
-    if (item.specifier !== 'create-leo-urn@0.2.0-preview.1') {
+    if (item.specifier !== 'create-leo-urn@0.2.0-preview.2') {
       const url = new URL(item.specifier);
       if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) throw new Error('URN bootstrap 需要固定制品，认证交给 npm 配置');
     }

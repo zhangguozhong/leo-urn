@@ -1,14 +1,14 @@
 # create-leo-urn
 
-为已有 iOS App 创建 URN 业务工程。公开预览版 0.2.0-preview.1；RN 0.87.0、React 19.2.3、iOS 15.1+。
+为已有 iOS App 创建 URN 业务工程。公开预览版 0.2.0-preview.2；RN 0.87.0、React 19.2.3、iOS 15.1+。
 
 先有能运行的 Xcode App 工程，再从其父目录执行：
 
 ```sh
 curl -fL \
-  https://raw.githubusercontent.com/zhangguozhong/leo-urn/400b0ff33ce42959253ade77e895b4bc4a9124c2/profiles/urn-rn087-0.2.0-preview.1.json \
+  https://raw.githubusercontent.com/zhangguozhong/leo-urn/400b0ff33ce42959253ade77e895b4bc4a9124c2/profiles/urn-rn087-0.2.0-preview.2.json \
   -o urn-profile.json
-npm exec --yes --registry=https://registry.npmjs.org --package=create-leo-urn@0.2.0-preview.1 -- \
+npm exec --yes --registry=https://registry.npmjs.org --package=create-leo-urn@0.2.0-preview.2 -- \
   create-leo-urn ./order-rn \
   --ios-project ./HostApp/HostApp.xcodeproj --target HostApp \
   --profile ./urn-profile.json --install
@@ -22,7 +22,7 @@ profile 固定四个 SDK/工具包及 create 自身的版本、来源和 SHA256�
 
 Pod 安装完成后执行 baseline:prepare，审阅真实基线再 baseline:check。Debug 设置 Run 环境 URN_BUNDLE_MODE=metro 并启动 Metro；Release 使用 embedded，停止 Metro 后实际验收。签名和 IPA 导出由宿主负责。
 
-0.2.0-preview.1 已发布包中的生成 README 有旧发布文案；源代码说明修订不会覆盖已发布 tarball。完整公开接入说明见 [leo-urn](https://github.com/zhangguozhong/leo-urn)。
+0.2.0-preview.2 已发布包中的生成 README 有旧发布文案；源代码说明修订不会覆盖已发布 tarball。完整公开接入说明见 [leo-urn](https://github.com/zhangguozhong/leo-urn)。
 
 ## Android候选能力
 

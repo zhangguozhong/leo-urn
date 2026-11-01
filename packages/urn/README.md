@@ -1,6 +1,6 @@
 # URN SDK
 
-`leo-urn` 与同包的 `LeoURN.podspec` 提供 iOS 共享 RN Runtime 和独立页面连接。`0.2.0-preview.1` 为预览版本，首次分发使用 next；具体可用版本以 npm registry 与公开 Specs 索引为准。固定 React `19.2.3`、RN `0.87.0`、Hermes/Fabric、最低 iOS `15.1`，Aeris Core/RN 固定为 0.26.0-preview.1。
+`leo-urn` 与同包的 `LeoURN.podspec` 提供 iOS 共享 RN Runtime 和独立页面连接。`0.2.0-preview.2` 为预览版本，首次分发使用 next；具体可用版本以 npm registry 与公开 Specs 索引为准。固定 React `19.2.3`、RN `0.87.0`、Hermes/Fabric、最低 iOS `15.1`，Aeris Core/RN 固定为 0.26.0-preview.1。
 
 SDK 源码位于 `packages/urn`。原生按 `Container`、`Routing`、`ReactNative`、`Modules` 分组；`URNReactHost` 封装 RN 宿主接线，JS 的 `PageCoordinator` 管理同一轮次的页面与关闭流程。它们是容器的内部实现，业务接入继续使用下文公开入口。
 

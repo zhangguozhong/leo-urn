@@ -2,8 +2,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 export const versions = Object.freeze({
-  'leo-urn': '0.2.0-preview.1',
-  'leo-urn-tooling': '0.2.0-preview.1',
+  'leo-urn': '0.2.0-preview.2',
+  'leo-urn-tooling': '0.2.0-preview.2',
   'aeris-client-core': '0.26.0-preview.1',
   'aeris-react-native': '0.26.0-preview.1',
 });
@@ -48,7 +48,7 @@ export function validateProfile(profile) {
       name,
       version,
     );
-  validateArtifact(profile.bootstrap, 'create-leo-urn', '0.2.0-preview.1');
+  validateArtifact(profile.bootstrap, 'create-leo-urn', '0.2.0-preview.2');
   const cap = profile.aeris;
   if (
     !/^[a-f0-9]{40}$/.test(cap?.source?.ref ?? '') ||

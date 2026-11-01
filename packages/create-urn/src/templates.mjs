@@ -4,8 +4,8 @@ const json = (value) => JSON.stringify(value, null, 2) + '\n';
 const plugins = [
   {
     name: 'leo-urn',
-    version: '0.2.0-preview.1',
-    pods: [{ name: 'LeoURN', version: '0.2.0-preview.1' }],
+    version: '0.2.0-preview.2',
+    pods: [{ name: 'LeoURN', version: '0.2.0-preview.2' }],
     codegen: { name: 'URNSpec', type: 'modules' },
   },
   {
@@ -47,7 +47,7 @@ export function templates({ profile, name, iosProject, target, hostFromApp, appF
       },
       dependencies: { react: '19.2.3', 'react-native': '0.87.0', ...deps },
       devDependencies: {
-        'leo-urn-tooling': 'file:.urn/packages/leo-urn-tooling-0.2.0-preview.1.tgz',
+        'leo-urn-tooling': 'file:.urn/packages/leo-urn-tooling-0.2.0-preview.2.tgz',
         '@react-native-community/cli': '20.2.0',
         '@react-native-community/cli-platform-ios': '20.2.0',
         '@react-native/metro-config': '0.87.0',

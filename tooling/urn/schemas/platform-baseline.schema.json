@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:leo-urn:schemas:platform-baseline",
-  "title": "URN 0.2.0-preview.1 platform baseline",
+  "title": "URN 0.2.0-preview.2 platform baseline",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -16,52 +16,111 @@
     "locks"
   ],
   "properties": {
-    "schemaVersion": { "const": 1 },
-    "baselineId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,80}$" },
+    "schemaVersion": {
+      "const": 1
+    },
+    "baselineId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
+    },
     "versions": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["react", "reactNative", "urnJs", "urnPod", "aeris"],
+      "required": [
+        "react",
+        "reactNative",
+        "urnJs",
+        "urnPod",
+        "aeris"
+      ],
       "properties": {
-        "react": { "const": "19.2.3" },
-        "reactNative": { "const": "0.87.0" },
-        "urnJs": { "const": "0.2.0-preview.1" },
-        "urnPod": { "const": "0.2.0-preview.1" },
-        "aeris": { "const": "0.26.0-preview.1" }
+        "react": {
+          "const": "19.2.3"
+        },
+        "reactNative": {
+          "const": "0.87.0"
+        },
+        "urnJs": {
+          "const": "0.2.0-preview.2"
+        },
+        "urnPod": {
+          "const": "0.2.0-preview.2"
+        },
+        "aeris": {
+          "const": "0.26.0-preview.1"
+        }
       }
     },
     "aeris": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["sourceRef", "capabilitiesManifest"],
+      "required": [
+        "sourceRef",
+        "capabilitiesManifest"
+      ],
       "properties": {
-        "sourceRef": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
-        "capabilitiesManifest": { "type": "string", "minLength": 1 }
+        "sourceRef": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "capabilitiesManifest": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "toolchain": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["node", "xcode", "cocoaPods"],
+      "required": [
+        "node",
+        "xcode",
+        "cocoaPods"
+      ],
       "properties": {
-        "node": { "$ref": "#/$defs/version" },
-        "xcode": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$" },
-        "cocoaPods": { "$ref": "#/$defs/version" }
+        "node": {
+          "$ref": "#/$defs/version"
+        },
+        "xcode": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "cocoaPods": {
+          "$ref": "#/$defs/version"
+        }
       }
     },
-    "minIos": { "const": "15.1" },
-    "architecture": { "const": "new" },
-    "nativePlugins": { "type": "array", "items": { "$ref": "#/$defs/plugin" } },
+    "minIos": {
+      "const": "15.1"
+    },
+    "architecture": {
+      "const": "new"
+    },
+    "nativePlugins": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/plugin"
+      }
+    },
     "locks": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["path", "sha256"],
+        "required": [
+          "path",
+          "sha256"
+        ],
         "properties": {
-          "path": { "type": "string", "minLength": 1 },
-          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
         }
       }
     }
@@ -69,34 +128,63 @@
   "$defs": {
     "version": {
       "type": "string",
-      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
     },
     "plugin": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "version", "pods"],
+      "required": [
+        "name",
+        "version",
+        "pods"
+      ],
       "properties": {
-        "name": { "type": "string", "pattern": "^(?:@[a-z0-9._-]+/)?[a-z0-9][a-z0-9._-]*$" },
-        "version": { "$ref": "#/$defs/version" },
+        "name": {
+          "type": "string",
+          "pattern": "^(?:@[a-z0-9._-]+/)?[a-z0-9][a-z0-9._-]*$"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
         "pods": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name", "version"],
+            "required": [
+              "name",
+              "version"
+            ],
             "properties": {
-              "name": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_./+-]*$" },
-              "version": { "$ref": "#/$defs/version" }
+              "name": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_./+-]*$"
+              },
+              "version": {
+                "$ref": "#/$defs/version"
+              }
             }
           }
         },
         "codegen": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["name", "type"],
+          "required": [
+            "name",
+            "type"
+          ],
           "properties": {
-            "name": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
-            "type": { "enum": ["modules", "components", "all"] }
+            "name": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+            },
+            "type": {
+              "enum": [
+                "modules",
+                "components",
+                "all"
+              ]
+            }
           }
         }
       }

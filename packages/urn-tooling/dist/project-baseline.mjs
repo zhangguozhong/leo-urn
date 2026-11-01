@@ -32,8 +32,8 @@ export async function captureBaseline({ app, output }) {
     versions: {
       react: '19.2.3',
       reactNative: '0.87.0',
-      urnJs: '0.2.0-preview.1',
-      urnPod: '0.2.0-preview.1',
+      urnJs: '0.2.0-preview.2',
+      urnPod: '0.2.0-preview.2',
       aeris: '0.26.0-preview.1',
     },
     aeris: { sourceRef: profile.aeris.source.ref, capabilitiesManifest: 'aeris-capabilities.json' },

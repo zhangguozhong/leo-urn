@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "baselineId": "urn-rn087",
+  "packages": [
+    {
+      "name": "aeris-client-core",
+      "version": "0.26.0-preview.1",
+      "sha256": "974bcab3f8cefa480905f716766f07a179ac0030c16d05e53ff603dbb697d7f9",
+      "specifier": "aeris-client-core@0.26.0-preview.1"
+    },
+    {
+      "name": "aeris-react-native",
+      "version": "0.26.0-preview.1",
+      "sha256": "6ed83ae3a1c835a93a229ed5595bd5ef958f8f4bb29fa52b70abbf098f25fa9f",
+      "specifier": "aeris-react-native@0.26.0-preview.1"
+    },
+    {
+      "name": "leo-urn",
+      "version": "0.2.0-preview.2",
+      "sha256": "55fce4ccac31883e347dc095623c38898a10d09e9fe8e6cd9d6c19031df35c15",
+      "specifier": "leo-urn@0.2.0-preview.2"
+    },
+    {
+      "name": "leo-urn-tooling",
+      "version": "0.2.0-preview.2",
+      "sha256": "7e2d31e03dbc3a5ed980b1e2842bb60893eefe4dd42630d45bcad5dd7237f921",
+      "specifier": "leo-urn-tooling@0.2.0-preview.2"
+    }
+  ],
+  "bootstrap": {
+    "name": "create-leo-urn",
+    "version": "0.2.0-preview.2",
+    "sha256": "4dab930d5e346bc051c0e47675eaffa87779284ea3de3326a6477d7e0abac7af",
+    "specifier": "create-leo-urn@0.2.0-preview.2"
+  },
+  "aeris": {
+    "source": {
+      "repository": "https://github.com/zhangguozhong/aeris-sdk.git",
+      "ref": "907d120ee545b4c059f30535a020a85d9a5eec2c",
+      "availability": "published"
+    },
+    "nativeVersion": "0.26.0-preview.1",
+    "nativePods": [
+      "Aeris",
+      "AerisContracts",
+      "AerisHost/ReactNative",
+      "AerisRN"
+    ],
+    "closing": {
+      "protocol": "AerisClosingMessageReceiver",
+      "verified": true,
+      "availability": "published",
+      "tests": [
+        "ClosingWindowTests",
+        "HostVerify.closingReceiverTests"
+      ],
+      "swiftTests": 213,
+      "swiftSuites": 35,
+      "fullSuiteRef": "e1257acd6507fd220f1e5b5d39751501ef87eabe"
+    },
+    "packages": [
+      {
+        "name": "aeris-client-core",
+        "version": "0.26.0-preview.1",
+        "file": "aeris-client-core-0.26.0-preview.1.tgz",
+        "sourceRef": "907d120ee545b4c059f30535a020a85d9a5eec2c",
+        "sha256": "974bcab3f8cefa480905f716766f07a179ac0030c16d05e53ff603dbb697d7f9",
+        "requiredExports": [
+          "./ClientCore",
+          "./protocol"
+        ]
+      },
+      {
+        "name": "aeris-react-native",
+        "version": "0.26.0-preview.1",
+        "file": "aeris-react-native-0.26.0-preview.1.tgz",
+        "sourceRef": "907d120ee545b4c059f30535a020a85d9a5eec2c",
+        "sha256": "6ed83ae3a1c835a93a229ed5595bd5ef958f8f4bb29fa52b70abbf098f25fa9f",
+        "requiredExports": [
+          "./RNAdapter"
+        ]
+      }
+    ],
+    "android": {
+      "available": true,
+      "mavenRepository": "https://raw.githubusercontent.com/zhangguozhong/aeris-maven/0.26.0-preview.1",
+      "minimumAPI": 24,
+      "validation": "API24 and API35 ARM64 16KiB simulator; physical devices not claimed"
+    }
+  }
+}
