@@ -14,8 +14,8 @@ Pod::Spec.new do |s|
   s.source_files = 'ios/**/*.{h,m,mm,swift}'
   s.public_header_files = 'ios/ReactNative/URNReactHost.h'
   s.private_header_files = 'ios/Modules/*.h'
-  s.dependency 'AerisHost/ReactNative', '= 0.25.0'
-  s.dependency 'Aeris/UIKitContext', '= 0.25.0'
+  s.dependency 'AerisHost/ReactNative', '= 0.26.0-preview.1'
+  s.dependency 'Aeris/UIKitContext', '= 0.26.0-preview.1'
   install_modules_dependencies(s)
   # 本版本只验收此 RN 基线；Factory/Host API 不能静默跟随宿主升级。
   s.dependency 'React-Core', '= 0.87.0'

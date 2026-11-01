@@ -1,6 +1,6 @@
 {
   "name": "leo-urn",
-  "version": "0.1.0",
+  "version": "0.2.0-preview.1",
   "description": "Shared React Native runtime with isolated native pages and Aeris connections",
   "type": "module",
   "license": "MIT",
@@ -11,6 +11,7 @@
     "dist",
     "src",
     "ios",
+    "android",
     "config",
     "LeoURN.podspec",
     "LICENSE",
@@ -40,13 +41,16 @@
   "peerDependencies": {
     "react": "19.2.3",
     "react-native": "0.87.0",
-    "aeris-client-core": "0.25.0",
-    "aeris-react-native": "0.25.0"
+    "aeris-client-core": "0.26.0-preview.1",
+    "aeris-react-native": "0.26.0-preview.1"
   },
   "codegenConfig": {
     "name": "URNSpec",
     "type": "modules",
-    "jsSrcsDir": "src/specs"
+    "jsSrcsDir": "src/specs",
+    "android": {
+      "javaPackageName": "com.urn.sdk.codegen"
+    }
   },
   "repository": {
     "type": "git",

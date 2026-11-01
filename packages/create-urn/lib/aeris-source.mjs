@@ -29,12 +29,41 @@ export async function verifySource(directory, ref, repository) {
   const ignored = git(directory, ['ls-files', '--others', '--ignored', '--exclude-standard', '-z']);
   const allowed =
     /^(?:packages\/[^/]+\/(?:node_modules|dist)\/|(?:node_modules|build|\.build|artifacts|Pods|DerivedData|\.bundle)\/|tooling\/node_modules\/)/;
+  // 只有固定 commit 已声明的 Android Gradle 工程根/模块根可持有构建缓存。
+  // 不使用任意 **/build 白名单，避免 src/build 或未知模块注入编译输入。
+  const androidRoots = new Set(
+    git(directory, ['ls-files', '-z'])
+      .split('\0')
+      .filter((file) => /(?:^|\/)(?:build|settings)\.gradle(?:\.kts)?$/.test(file))
+      .map((file) => path.posix.dirname(file))
+      .filter((folder) =>
+        /^(?:native\/android(?:\/|$)|packages\/[^/]+\/android(?:\/|$))/.test(folder),
+      )
+      .filter(
+        (folder) =>
+          !folder
+            .split('/')
+            .some((part) =>
+              ['src', 'Sources', 'build', '.gradle', '.cxx', '.kotlin'].includes(part),
+            ),
+      ),
+  );
+  const androidCache = (file) =>
+    [...androidRoots].some((folder) =>
+      ['build', '.gradle', '.cxx', '.kotlin'].some((cache) =>
+        file.startsWith(`${folder}/${cache}/`),
+      ),
+    );
   if (
     ignored
       .split('\0')
       .some(
         (file) =>
-          file && !allowed.test(file) && !file.endsWith('/.DS_Store') && file !== '.DS_Store',
+          file &&
+          !allowed.test(file) &&
+          !androidCache(file) &&
+          !file.endsWith('/.DS_Store') &&
+          file !== '.DS_Store',
       )
   )
     throw new Error('源码含被忽略的额外输入，不能沿用固定 commit');

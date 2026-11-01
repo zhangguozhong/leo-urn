@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import path from 'node:path';
+import { isAndroidProject, runAndroidCLI } from './android-cli.mjs';
 import { pathToFileURL } from 'node:url';
 import { checkBaseline } from './baseline.mjs';
 import { checkDependencies, dependencyRecommendations } from './dependencies.mjs';
@@ -12,6 +13,10 @@ const help = `URN 依赖、平台基线和离线产物检查
   node tooling/urn/cli.mjs sync --dry-run --app DIR
   node tooling/urn/cli.mjs create-artifacts --app DIR --built-app APP --baseline FILE --project PBXPROJ --target NAME [--manifest FILE] [--release]
   node tooling/urn/cli.mjs verify-artifacts --app DIR --built-app APP --baseline FILE --project PBXPROJ --target NAME [--manifest FILE] [--release]
+  urn android-build --app DIR --variant debug|release [--metro] [--bundle] [--install --launch]
+  urn android-probe --app DIR [--output FILE]
+  urn android-audit --app DIR --artifact APK_OR_AAB [--bundle-file FILE] [--abis LIST]
+  urn android-aar --app DIR --artifact AAR [--required-class CLASS]
   node tooling/urn/cli.mjs --help
 所有路径显式指定；sync 仅输出建议，不安装依赖或修改工程。`;
 
@@ -21,6 +26,16 @@ export function run(argv, write = console.log) {
     return;
   }
   const [command, ...args] = argv;
+  const appIndex = args.indexOf('--app');
+  if (
+    command.startsWith('android-') ||
+    (['doctor', 'check-baseline', 'baseline'].includes(command) &&
+      appIndex >= 0 &&
+      args[appIndex + 1] &&
+      isAndroidProject(args[appIndex + 1]))
+  ) {
+    return runAndroidCLI(argv, write);
+  }
   if (
     !['check-baseline', 'doctor', 'sync', 'create-artifacts', 'verify-artifacts'].includes(command)
   )

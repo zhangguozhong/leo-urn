@@ -1,6 +1,6 @@
 # leo-urn-tooling
 
-URN 工程开发工具，0.1.0 为预览版本。通过 App 的 devDependencies 安装，复用同一份平台检查与 bundle 包装器。
+URN 工程开发工具，0.2.0-preview.1 为预览版本。通过 App 的 devDependencies 安装，复用同一份平台检查与 bundle 包装器。
 
 - `urn prepare [--app DIR]`：按 urn.profile.json 准备校验后的本地 tarball 和 Aeris Native 固定源码。
 - `urn baseline [--app DIR] [--output FILE]`：npm/Pods 安装后捕获真实锁摘要和工具链，已有文件不覆盖，结果须审阅。
@@ -10,3 +10,12 @@ URN 工程开发工具，0.1.0 为预览版本。通过 App 的 devDependencies 
 dist/bundle-ios.sh 放进 RN 标准 bundle phase，生成聚合 bundle/资源。该包不创建 AppDelegate、不自动修改签名或执行 pod install。
 
 冷启动时还未安装本工具，用脚手架生成的 prepare-urn.mjs（仅 Node 标准库）恢复依赖，再 npm ci。不要把预先安装本工具作为恢复前提。
+
+## Android候选能力
+
+
+- `urn android-build --app DIR --variant debug --metro --install`：真实Gradle安装Debug；独立壳可加 `--launch`，嵌入模式启动须显式Activity。
+- `urn android-probe --app DIR`：真实Gradle模型；`urn baseline --app DIR`捕获Android锁/配置基线，已有文件不覆盖。
+- `urn android-build --app DIR --variant release [--bundle]`：重新探针、校验基线、R8/Hermes离线构建；签名由宿主提供。
+- `urn android-audit` / `urn android-aar`：检查已有实际ZIP、bundle/ABI/JNI或AAR类与consumer规则，不代替运行及签名验收。
+

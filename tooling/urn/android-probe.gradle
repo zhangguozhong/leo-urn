@@ -1,0 +1,44 @@
+import groovy.json.JsonOutput
+
+// 只读取宿主当前评估后的公开 DSL；不提供伪装成探针结果的固定工具链常量。
+gradle.projectsEvaluated {
+    // init script 同样进入 RN included build；只为调用者的顶层宿主注册探针任务。
+    if (gradle.parent != null) return
+    def moduleName = gradle.startParameter.projectProperties['urnAppModule']
+    if (moduleName == null || !(moduleName ==~ /[A-Za-z][A-Za-z0-9_-]*/)) {
+        throw new GradleException('URN Android probe 需要合法的 -PurnAppModule')
+    }
+    def target = gradle.rootProject.findProject(":${moduleName}")
+    if (target == null || !target.plugins.hasPlugin('com.android.application')) {
+        throw new GradleException('URN Android probe 目标不是 Android application 模块')
+    }
+    target.tasks.register('urnAndroidProbe') {
+        doLast {
+            def android = target.extensions.getByName('android')
+            def components = target.extensions.getByName('androidComponents')
+            def flag = { String name ->
+                def value = target.findProperty(name)?.toString()
+                value == 'true' ? true : value == 'false' ? false : null
+            }
+            def release = android.buildTypes.findByName('release')
+            // AGP 9.2 ApplicationDefaultConfig.minSdk/targetSdk 是 nullable Int，非 ApiVersion。
+            def model = [
+                schemaVersion: 1,
+                projectDir: gradle.rootProject.projectDir.canonicalPath,
+                appModule: moduleName,
+                applicationId: android.defaultConfig.applicationId,
+                gradleVersion: gradle.gradleVersion,
+                agpVersion: components.pluginVersion.version,
+                javaVersion: System.getProperty('java.version'),
+                compileSdk: android.compileSdk,
+                minSdk: android.defaultConfig.minSdk,
+                targetSdk: android.defaultConfig.targetSdk,
+                ndkVersion: android.ndkVersion,
+                hermesEnabled: flag('hermesEnabled'),
+                newArchEnabled: flag('newArchEnabled'),
+                r8Enabled: release?.minifyEnabled,
+            ]
+            println('URN_ANDROID_PROBE=' + JsonOutput.toJson(model))
+        }
+    }
+}

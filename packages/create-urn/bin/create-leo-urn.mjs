@@ -2,11 +2,12 @@
 import path from 'node:path';
 import { scaffold } from '../src/scaffold.mjs';
 import { prepareProject } from '../lib/prepare-project.mjs';
-const help = `create-leo-urn：为已有 iOS App 创建 URN 代码工程
+const help = `create-leo-urn：创建 iOS/Android URN 代码工程
 用法：
   create-leo-urn OUTPUT --ios-project FILE.xcodeproj --target NAME --profile FILE [--name NAME] [--install] [--dry-run]
+  create-leo-urn OUTPUT --platform android --mode standalone|embedded --profile FILE [--android-project DIR] [--application-id com.example.app] [--app-module app]
   create-leo-urn prepare --app DIR
-当前尚未发布，请从固定本地/私有 tarball 启动。目录名由 OUTPUT 决定；不覆盖原生工程。`;
+公开预览版可从 npm 按精确版本启动，依赖由固定 profile 校验。目录名由 OUTPUT 决定；不覆盖原生工程。`;
 try {
   const args = process.argv.slice(2);
   if (!args.length || args.includes('--help')) {
@@ -26,6 +27,11 @@ try {
         continue;
       }
       const key = {
+        '--platform': 'platform',
+        '--mode': 'mode',
+        '--android-project': 'androidProject',
+        '--application-id': 'applicationId',
+        '--app-module': 'appModule',
         '--ios-project': 'iosProject',
         '--target': 'target',
         '--profile': 'profile',

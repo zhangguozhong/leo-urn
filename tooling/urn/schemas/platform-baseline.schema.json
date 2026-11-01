@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:leo-urn:schemas:platform-baseline",
-  "title": "URN 0.1.0 platform baseline",
+  "title": "URN 0.2.0-preview.1 platform baseline",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -25,9 +25,9 @@
       "properties": {
         "react": { "const": "19.2.3" },
         "reactNative": { "const": "0.87.0" },
-        "urnJs": { "const": "0.1.0" },
-        "urnPod": { "const": "0.1.0" },
-        "aeris": { "const": "0.25.0" }
+        "urnJs": { "const": "0.2.0-preview.1" },
+        "urnPod": { "const": "0.2.0-preview.1" },
+        "aeris": { "const": "0.26.0-preview.1" }
       }
     },
     "aeris": {

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { loadProfile, relocateProfile } from '../lib/profile.mjs';
 import { prepareProject } from '../lib/prepare-project.mjs';
+import { scaffoldAndroid } from './android-scaffold.mjs';
 import { templates } from './templates.mjs';
 
 const safePath = (value) => /^[A-Za-z0-9_. /@+-]+$/.test(value);
@@ -14,6 +15,9 @@ async function exists(filename) {
 }
 
 export async function scaffold(options) {
+  if (options.platform === 'android') return scaffoldAndroid(options);
+  if (options.platform && options.platform !== 'ios')
+    throw new Error('platform 必须为 ios 或 android');
   if (!options.directory || !options.iosProject || !options.target || !options.profile)
     throw new Error('需要输出目录、--ios-project、--target 和 --profile');
   let directory = path.resolve(options.directory);

@@ -1,7 +1,7 @@
 {
   "name": "LeoURN",
   "module_name": "URN",
-  "version": "0.1.0",
+  "version": "0.2.0-preview.1",
   "summary": "Shared React Native runtime with isolated native pages and Aeris connections",
   "homepage": "https://github.com/zhangguozhong/leo-urn",
   "license": {
@@ -11,7 +11,7 @@
   "authors": "zhangguozhong",
   "source": {
     "git": "https://github.com/zhangguozhong/leo-urn.git",
-    "tag": "0.1.0"
+    "tag": "0.2.0-preview.1"
   },
   "platforms": {
     "ios": "15.1"
@@ -28,10 +28,10 @@
   ],
   "dependencies": {
     "AerisHost/ReactNative": [
-      "= 0.25.0"
+      "= 0.26.0-preview.1"
     ],
     "Aeris/UIKitContext": [
-      "= 0.25.0"
+      "= 0.26.0-preview.1"
     ],
     "React-Core": [
       "= 0.87.0"

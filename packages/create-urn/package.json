@@ -1,8 +1,8 @@
 {
   "name": "create-leo-urn",
-  "version": "0.1.0",
+  "version": "0.2.0-preview.1",
   "type": "module",
-  "description": "\u5728\u5df2\u6709 iOS App \u65c1\u521b\u5efa\u56fa\u5b9a\u57fa\u7ebf\u7684 URN \u5de5\u7a0b",
+  "description": "为已有原生App或独立调试壳创建固定基线的URN工程（iOS/Android）",
   "license": "MIT",
   "bin": {
     "create-leo-urn": "bin/create-leo-urn.mjs"
@@ -12,7 +12,8 @@
     "src",
     "lib",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "assets"
   ],
   "scripts": {
     "build": "node build.mjs",

@@ -1,64 +1,43 @@
 # URN
 
-URN 为 iOS App 提供共享 React Native 运行时、多页面独立连接、导航返回值、生命周期和错误重试。
+为iOS与Android App提供共享React Native运行时、多页面独立连接、导航返回值、生命周期和加载/错误/重试界面。URN管理RN容器，Aeris负责跨平台通信，两者为独立库。
 
-- npm：`leo-urn`
-- iOS Pod：`LeoURN`
-- Swift 模块：`URN`，使用 `import URN`
-- 工具：`leo-urn-tooling`、`create-leo-urn`
-- 基线：React Native 0.87.0、React 19.2.3、iOS 15.1+
-
-0.1.0 为预览版本，首次公开发布使用 next 标签。具体是否可安装，以 npm registry 和公开 Specs 索引为准。
+预览版`0.2.0-preview.1`。npm `leo-urn`，iOS Pod `LeoURN`，Swift继续`import URN`。固定基线：RN0.87.0、React19.2.3、iOS15.1+、Android API24+/Java17。
 
 ## 安装
 
-App 同时安装 JS 包及所要求的 Aeris Core/RN 精确版本。原生代码由 `leo-urn` 内的 `LeoURN.podspec` 自动链接，避免另外安装不同来源的同名 Pod。
+```sh
+npm install --save-exact leo-urn@0.2.0-preview.1 aeris-client-core@0.26.0-preview.1 aeris-react-native@0.26.0-preview.1 react@19.2.3 react-native@0.87.0
+npm install --save-dev --save-exact leo-urn-tooling@0.2.0-preview.1
+```
+
+RN自动链接LeoURN与AerisRN，iOS Podfile同时配置公开Specs `https://github.com/zhangguozhong/leo-podspecs.git` 与CocoaPods CDN，并按RN官方流程调用use_native_modules!/use_react_native!。不要为同名Pod重复声明不同来源。原生依赖统一Aeris `0.26.0-preview.1`。
+
+## 创建独立调试壳或嵌入已有App
+
+下载固定profile：`profiles/urn-rn087-0.2.0-preview.1.json`。profile包含四个npm包、脚手架SHA256及公开Aeris源码commit；不能用浮动main或不匹配版本替换。
 
 ```sh
-npm install --save-exact leo-urn@0.1.0 react@19.2.3 react-native@0.87.0 aeris-client-core@0.25.0 aeris-react-native@0.25.0
+npx --yes create-leo-urn@0.2.0-preview.1 --help
+
+# Android独立工程
+npx --yes create-leo-urn@0.2.0-preview.1 rn-integration --platform android --mode standalone --profile /absolute/urn-profile.json
+
+# Android嵌入已有原生工程
+npx --yes create-leo-urn@0.2.0-preview.1 rn-integration --platform android --mode embedded --android-project /absolute/HostApp --profile /absolute/urn-profile.json
+
+# iOS嵌入已有原生工程
+npx --yes create-leo-urn@0.2.0-preview.1 rn-integration --ios-project /absolute/HostApp/HostApp.xcodeproj --target HostApp --profile /absolute/urn-profile.json
 ```
 
-生产工程使用经过验证的精确版本和锁文件，不将上述命令理解为任意最新版均兼容。Aeris 0.25.0 的源码候选已准备；正式安装仍需等待 npm/Pod 发布完成。
+输出目录名由命令指定，只使用ASCII名称。脚手架不覆盖已有宿主，先生成再按生成说明合并Podfile或Gradle接线。`npm run prepare:urn`按profile校验摘要并准备`.urn`；一个集成工程复用一份node_modules，不把各独立业务仓库的node_modules合并到App。
 
-在宿主 Podfile 加载 RN 官方 `react_native_pods`，执行 `prepare_react_native_project!`，在 RN 工程目录执行 `use_native_modules!`，再调用 `use_react_native!`。已有业务 Pods 和 `post_install` 应合并保留。
+## 开发与正式出包
 
-```ruby
-config = Dir.chdir(app_root) { use_native_modules! }
-use_react_native!(:path => config[:reactNativePath], :app_path => app_root)
-```
+业务工程开启Metro，Debug使用Metro URL与Fast Refresh；Release聚合业务入口并打包离线bundle/资源。页面push/pop、返回结果、重试与连接各自隔离。最终页面关闭会等待Native清理与运行时销毁；Reload不能复活旧callback。
 
-`app_root` 是业务 RN 工程目录。Aeris 原生 Pods 必须从已发布的同一兼容版本解析。`pod install` 成功后，通过 App 持有的 `URNCoordinator` 打开页面；Swift 使用 `import URN`。
+Android源码已包含Native生命周期与JNI接线；自有urnbindings库使用16KiB LOAD段。工具可调用`auditAndroidPageAlignment`检查APK/AAB/AAR，不代替设备运行和签名验收。Core可通过固定公开Aeris源码复用；直接Maven消费时，仓库地址为`https://raw.githubusercontent.com/zhangguozhong/aeris-maven/0.26.0-preview.1`。
 
-## 开发与构建
+`next`为预览，`latest`保持原版本。模拟器和本机Debug/Release构建已有覆盖；真实手机、OS长期后台及生产签名包不在本轮已完成范围。SDK不包含业务App、UnityFramework或私有设计文档。
 
-业务工程启动 Metro，原生 App 的 Debug 配置使用 Metro bundle URL。Release 必须包含聚合 JS bundle 与资源；关闭、重试和返回结果按页面连接隔离。
-
-本候选验收覆盖 iOS 模拟器 Release、多页面、callback、事件、取消、关闭和 Metro Fast Refresh。尚未声明 Android、真机签名或 App Store Archive 验收通过。
-
-## 许可
-
-MIT，各包包含 LICENSE。此源码交付目录不包含内部设计文档、测试日志或 Git 历史。
-
-## 固定 profile 与脚手架
-
-首次接入已有 iOS App，可下载本版本的固定 profile，再运行已发布脚手架。先用 Xcode 创建或选定真实 App target；目录名由调用者指定。
-
-```sh
-curl -fL https://raw.githubusercontent.com/zhangguozhong/leo-urn/main/profiles/urn-rn087-0.1.0.json -o urn-profile.json
-npm exec --yes --package=create-leo-urn@0.1.0 -- create-leo-urn ./rn-integration \
-  --ios-project ./HostApp/HostApp.xcodeproj --target HostApp \
-  --profile ./urn-profile.json --install
-```
-
-profile 固定五个 npm 制品的精确版本与 SHA256，以及 Aeris 的公开源码 commit。脚手架当前生成的 Podfile 示例使用下载到 `.urn/aeris` 的固定源码；若采用公开 Specs，请把三个 Aeris 原生 Pod 的 `:path` 声明改为下列固定版本来源，保留 RN 自动链接及唯一 post_install：
-
-```ruby
-source 'https://github.com/zhangguozhong/leo-podspecs.git'
-source 'https://cdn.cocoapods.org/'
-# App target 内：
-pod 'AerisContracts', '= 0.25.0'
-pod 'Aeris', '= 0.25.0'
-pod 'AerisHost', '= 0.25.0'
-```
-
-`LeoURN` 与 `AerisRN` 随 npm 安装自动链接，不重复手动声明其他来源。Swift 仍使用 `import URN`。profile 文件名带版本号，后续版本新增文件，不覆盖旧版本。
+MIT。

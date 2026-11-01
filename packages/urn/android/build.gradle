@@ -1,0 +1,64 @@
+plugins {
+    id 'com.android.library'
+    id 'com.facebook.react'
+}
+
+def nodeRoot = providers.gradleProperty('urnNodeModules').orElse(providers.provider {
+    def injected = rootProject.findProperty('urnNodeModules')
+    if (injected == null) {
+        throw new GradleException('请通过 -PurnNodeModules 或宿主 Settings 的 rootProject.ext.urnNodeModules 指定依赖目录')
+    }
+    injected.toString()
+}).get()
+
+react {
+    reactNativeDir = file("${nodeRoot}/react-native")
+    codegenDir = file("${nodeRoot}/@react-native/codegen")
+    jsRootDir = file('..')
+    libraryName = 'URNSpec'
+    codegenJavaPackageName = 'com.urn.sdk.codegen'
+}
+
+android {
+    namespace 'com.urn.sdk'
+    compileSdk 37
+    ndkVersion '27.1.12297006'
+    defaultConfig {
+        minSdk 24
+        ndk { abiFilters.addAll((rootProject.findProperty('reactNativeArchitectures') ?: 'armeabi-v7a,x86,arm64-v8a,x86_64').split(',')) }
+        consumerProguardFiles 'consumer-rules.pro'
+        externalNativeBuild {
+            cmake {
+                cppFlags '-std=c++20 -fexceptions -frtti'
+                arguments '-DANDROID_STL=c++_shared', "-DURN_REACT_NATIVE_DIR=${nodeRoot}/react-native"
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets { test { resources.srcDir "../config" } }
+    buildFeatures { prefab true }
+    externalNativeBuild {
+        cmake {
+            path 'src/main/jni/CMakeLists.txt'
+            version '3.22.1'
+        }
+    }
+}
+
+def aerisCoreVersion = providers.gradleProperty('aerisCoreVersion').orElse('0.26.0-preview.1').get()
+if (!(aerisCoreVersion ==~ /\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?/)) {
+    throw new GradleException('aerisCoreVersion 必须为固定版本，不能使用动态版本或范围')
+}
+
+dependencies {
+    if (findProject(':aeris') != null) api project(':aeris')
+    else api "com.aeris.sdk:aeris:${aerisCoreVersion}"
+    implementation 'com.facebook.react:react-android:0.87.0'
+    implementation 'androidx.fragment:fragment-ktx:1.8.9'
+    testImplementation 'junit:junit:4.13.2'
+}
+
+apply from: "urn-publishing.gradle"
