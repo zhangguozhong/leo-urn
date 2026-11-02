@@ -12,3 +12,59 @@ export function publishDiagnostic(observer, data) {
         }
     });
 }
+/** 只复制诊断白名单，业务参数、错误消息和凭据不进入报告。 */
+export class DiagnosticStore {
+    capacity;
+    events = Object.freeze([]);
+    listeners = new Set();
+    constructor(capacity = 128) {
+        this.capacity = capacity;
+        if (!Number.isInteger(capacity) || capacity < 1 || capacity > 1024)
+            throw Error('诊断预算须在1至1024');
+    }
+    get snapshot() {
+        return this.events;
+    }
+    getSnapshot = () => this.events;
+    subscribe = (listener) => {
+        this.listeners.add(listener);
+        return () => {
+            this.listeners.delete(listener);
+        };
+    };
+    record(event) {
+        const safe = {};
+        for (const key of [
+            'timestampMs',
+            'stage',
+            'runtimeGeneration',
+            'pageId',
+            'channelId',
+            'durationMs',
+            'code',
+            'queuedMessages',
+            'queuedBytes',
+        ]) {
+            const value = event[key];
+            if (typeof value === 'number' && Number.isFinite(value))
+                safe[key] = value;
+            if (typeof value === 'string' && /^[a-zA-Z0-9._:-]{1,128}$/.test(value))
+                safe[key] = value;
+        }
+        this.events = Object.freeze([
+            ...this.events.slice(-(this.capacity - 1)),
+            Object.freeze(safe),
+        ].slice(-this.capacity));
+        for (const listener of [...this.listeners]) {
+            try {
+                listener();
+            }
+            catch {
+                /* 观察器不拥有容器。 */
+            }
+        }
+    }
+    exportReport() {
+        return JSON.stringify({ version: 1, events: this.events });
+    }
+}

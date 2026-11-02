@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "baselineId": "urn-rn087",
+  "packages": [
+    {
+      "name": "aeris-client-core",
+      "version": "0.26.0-preview.2",
+      "sha256": "cf06510c9859f5d1a70fbadb6c70599d7541ed6deb26021b78e1f7470cf5d726",
+      "specifier": "aeris-client-core@0.26.0-preview.2"
+    },
+    {
+      "name": "aeris-react-native",
+      "version": "0.26.0-preview.2",
+      "sha256": "b02c0c5a35616d6a2caa1fef6c6e5800de0cf1919d32a34b5b24506e0aba48a4",
+      "specifier": "aeris-react-native@0.26.0-preview.2"
+    },
+    {
+      "name": "leo-urn",
+      "version": "0.3.0-preview.1",
+      "sha256": "da665b2a4163c52cad946b843eb9d7ab2f88d33b9282d1365f1c05a38199c11d",
+      "specifier": "leo-urn@0.3.0-preview.1"
+    },
+    {
+      "name": "leo-urn-tooling",
+      "version": "0.3.0-preview.1",
+      "sha256": "15093bdd933e3845cea26cfd3614a333c2f6ebf54b7f67c65622e6466eba2f28",
+      "specifier": "leo-urn-tooling@0.3.0-preview.1"
+    }
+  ],
+  "bootstrap": {
+    "name": "create-leo-urn",
+    "version": "0.3.0-preview.1",
+    "sha256": "8995cfab054552d0372c64a14ce4b63210b63d8afbc1f1ef6d8f6f82b6bd4400",
+    "specifier": "create-leo-urn@0.3.0-preview.1"
+  },
+  "aeris": {
+    "source": {
+      "repository": "https://github.com/zhangguozhong/aeris-sdk.git",
+      "ref": "e6d3c2b744fc75210231761b220b951804ed7a1c",
+      "availability": "published"
+    },
+    "nativeVersion": "0.26.0-preview.2",
+    "nativePods": [
+      "Aeris",
+      "AerisContracts",
+      "AerisHost/ReactNative",
+      "AerisRN"
+    ],
+    "closing": {
+      "protocol": "AerisClosingMessageReceiver",
+      "verified": true,
+      "availability": "published",
+      "tests": [
+        "ClosingWindowTests",
+        "HostVerify.closingReceiverTests"
+      ],
+      "swiftTests": 213,
+      "swiftSuites": 35,
+      "fullSuiteRef": "e1257acd6507fd220f1e5b5d39751501ef87eabe",
+      "verification": "source-compatible inherited verification",
+      "verificationNote": "Historical test names, counts and fullSuiteRef are retained from the published baseline. Runtime source and generated dist were verified byte-for-byte unchanged; no new native test run is claimed for this release."
+    },
+    "packages": [
+      {
+        "name": "aeris-client-core",
+        "version": "0.26.0-preview.2",
+        "file": "aeris-client-core-0.26.0-preview.2.tgz",
+        "sourceRef": "e6d3c2b744fc75210231761b220b951804ed7a1c",
+        "sha256": "cf06510c9859f5d1a70fbadb6c70599d7541ed6deb26021b78e1f7470cf5d726",
+        "requiredExports": [
+          "./ClientCore",
+          "./protocol"
+        ]
+      },
+      {
+        "name": "aeris-react-native",
+        "version": "0.26.0-preview.2",
+        "file": "aeris-react-native-0.26.0-preview.2.tgz",
+        "sourceRef": "e6d3c2b744fc75210231761b220b951804ed7a1c",
+        "sha256": "b02c0c5a35616d6a2caa1fef6c6e5800de0cf1919d32a34b5b24506e0aba48a4",
+        "requiredExports": [
+          "./RNAdapter"
+        ]
+      }
+    ],
+    "android": {
+      "available": true,
+      "mavenRepository": "https://raw.githubusercontent.com/zhangguozhong/aeris-maven/0.26.0-preview.2",
+      "minimumAPI": 24,
+      "validation": "API24 and API35 ARM64 16KiB simulator; physical devices not claimed",
+      "verification": "source-compatible inherited verification; validation describes the historical baseline, not a new device run"
+    }
+  }
+}

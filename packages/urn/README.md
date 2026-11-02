@@ -1,6 +1,6 @@
 # URN SDK
 
-`leo-urn` 为 iOS 和 Android 提供共享 RN 运行时、多页面导航、独立通信连接和页面生命周期管理。当前版本 `0.2.0-preview.3`，使用 React `19.2.3`、React Native `0.87.0`、Hermes/Fabric；最低 iOS `15.1`、Android API `24`，Aeris Core/RN 固定为 `0.26.0-preview.2`。
+`leo-urn` 为 iOS 和 Android 提供共享 RN 运行时、多页面导航、独立通信连接和页面生命周期管理。当前版本 `0.3.0-preview.1`，使用 React `19.2.3`、React Native `0.87.0`、Hermes/Fabric；最低 iOS `15.1`、Android API `24`，Aeris Core/RN 固定为 `0.26.0-preview.2`。
 
 SDK 源码位于 `packages/urn`。原生按 `Container`、`Routing`、`ReactNative`、`Modules` 分组；`URNReactHost` 封装 RN 宿主接线，JS 的 `PageCoordinator` 管理同一轮次的页面与关闭流程。它们是容器的内部实现，业务接入继续使用下文公开入口。
 
@@ -136,3 +136,9 @@ maxPages 决定本轮有效容量且不能大于 channelBudget.maxChannels。默
 ## 安装包接入
 
 JS、类型、Codegen 以及 iOS/Android 原生源码随同一 `leo-urn` 包分发。Pod 使用 node_modules 中的 LeoURN.podspec 自动链接，不要再手动引入另一版本的 URN Pod。预览版使用说明见[公开源码仓库](https://github.com/zhangguozhong/leo-urn)。
+
+## 混合路由和宿主能力
+
+`FeatureDefinition.module`声明模块版本、参数契约、requiredCapabilities及可选baseline。宿主配置mixedRouting并调用openRoute；直接open保留原有本页加载/错误/重试行为。状态通过captureRoutes/restoreRoutes及owner.capture/restore接入，存储与业务迁移由宿主决定。自定义owner使用registerRestorationOwner一次登记归属，不得跨用户域或基线重新贴标签。
+
+Coordinator提供prewarm、setEnvironment及局部嵌入能力；JS通过environment.host观察主题/语言/窗口等版本化快照。开发时显式挂载DiagnosticPanel并提供本地导出回调。容器不会自动发布报告，报告排除业务参数与回包。

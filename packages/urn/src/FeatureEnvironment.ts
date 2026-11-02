@@ -5,6 +5,7 @@ import type { ClientCore } from 'aeris-client-core/ClientCore';
 export type BusinessBridge = Pick<ClientCore, 'call' | 'subscribe'>;
 
 export interface FeatureEnvironment {
+  readonly host: import('./HostEnvironment.js').HostEnvironment;
   readonly pageId: string;
   readonly featureId: string;
   readonly bridge: BusinessBridge;

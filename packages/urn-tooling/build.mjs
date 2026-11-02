@@ -5,6 +5,7 @@ const dist = path.join(import.meta.dirname, 'dist');
 await fs.mkdir(dist, { recursive: true });
 for (const file of [
   'cli.mjs',
+  'container-tools.mjs',
   'android-cli.mjs',
   'android-project.mjs',
   'android-probe.gradle',

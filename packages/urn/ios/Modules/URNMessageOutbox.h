@@ -7,6 +7,8 @@ NS_ASSUME_NONNULL_BEGIN
     (NSString *generation, NSString *channel, NSString *deliveryId, NSString *kind,
      NSString *message);
 @property (nonatomic, copy, nullable) void (^fault)(NSString *channel);
+/// Host只在JS安装监听并独立确认boot后放行；等待帧仍占原有预算。
+@property (nonatomic) BOOL deliveryEnabled;
 - (void)activateGeneration:(NSString *)generation;
 - (BOOL)registerChannel:(NSString *)channel;
 - (void)enqueueChannel:(NSString *)channel

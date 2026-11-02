@@ -1,14 +1,14 @@
 # create-leo-urn
 
-为已有 iOS/Android App 或独立调试壳创建 URN 集成工程。当前版本 `0.2.0-preview.3`，使用 React Native `0.87.0`、React `19.2.3`；最低 iOS `15.1`、Android API `24`。
+为已有 iOS/Android App 或独立调试壳创建 URN 集成工程。当前版本 `0.3.0-preview.1`，使用 React Native `0.87.0`、React `19.2.3`；最低 iOS `15.1`、Android API `24`。
 
 先有能运行的 Xcode App 工程，再从其父目录执行：
 
 ```sh
 curl -fL \
-  https://raw.githubusercontent.com/zhangguozhong/leo-urn/0.2.0-preview.3/profiles/urn-rn087-0.2.0-preview.3.json \
+  https://raw.githubusercontent.com/zhangguozhong/leo-urn/0.3.0-preview.1/profiles/urn-rn087-0.3.0-preview.1.json \
   -o urn-profile.json
-npm exec --yes --registry=https://registry.npmjs.org --package=create-leo-urn@0.2.0-preview.3 -- \
+npm exec --yes --registry=https://registry.npmjs.org --package=create-leo-urn@0.3.0-preview.1 -- \
   create-leo-urn ./order-rn \
   --ios-project ./HostApp/HostApp.xcodeproj --target HostApp \
   --profile ./urn-profile.json --install

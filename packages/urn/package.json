@@ -1,7 +1,7 @@
 {
   "name": "leo-urn",
-  "version": "0.2.0-preview.3",
-  "description": "面向 iOS 和 Android 的 React Native 容器，提供共享运行时、多页面导航和独立通信连接。",
+  "version": "0.3.0-preview.1",
+  "description": "面向 iOS/Android 的 React Native 容器，支持共享运行时、独立页面连接、混合路由、状态恢复和资源清理。",
   "type": "module",
   "license": "MIT",
   "main": "./dist/index.js",

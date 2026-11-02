@@ -39,6 +39,10 @@ export class ContainerClient {
     command: (command: string, id: string, payload: string) => void = () => {
       throw new URNError('NAVIGATION_UNAVAILABLE', '原生导航未接入');
     },
+    routes?: {
+      runtime: import('./ContainerCapabilities.js').ContainerCapabilities;
+      source: string;
+    },
   ) {
     this.core = new ClientCore(
       new PageAdapter(port, () => {
@@ -46,28 +50,34 @@ export class ContainerClient {
       }),
       onError,
     );
-    this.experience = new PageExperience(command, onError);
-    this.environment = Object.freeze({
-      lifecycle: this.experience.lifecycle,
-      navigation: this.experience.navigation,
-      pageId,
-      featureId,
-      bridge: Object.freeze({
-        call: <T>(
-          method: string,
-          params: Record<string, unknown>,
-          callback: Completion<T> | CallCallbacks<T>,
-          options?: CallOptions,
-        ) => {
-          this.assertActive();
-          return this.core.call(method, params, callback, options);
+    this.experience = new PageExperience(command, onError, 15000, routes);
+    this.environment = Object.freeze(
+      Object.defineProperty(
+        {
+          lifecycle: this.experience.lifecycle,
+          navigation: this.experience.navigation,
+          pageId,
+          featureId,
+          bridge: Object.freeze({
+            call: <T>(
+              method: string,
+              params: Record<string, unknown>,
+              callback: Completion<T> | CallCallbacks<T>,
+              options?: CallOptions,
+            ) => {
+              this.assertActive();
+              return this.core.call(method, params, callback, options);
+            },
+            subscribe: async (...args: Parameters<ClientCore['subscribe']>) => {
+              this.assertActive();
+              return this.core.subscribe(...args);
+            },
+          }),
         },
-        subscribe: async (...args: Parameters<ClientCore['subscribe']>) => {
-          this.assertActive();
-          return this.core.subscribe(...args);
-        },
-      }),
-    });
+        'host',
+        { value: this.experience.hostEnvironment, enumerable: false },
+      ) as FeatureEnvironment,
+    );
   }
 
   get active(): boolean {

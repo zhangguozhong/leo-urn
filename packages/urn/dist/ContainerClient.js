@@ -28,15 +28,15 @@ export class ContainerClient {
     experience;
     constructor(pageId, featureId, port, onError, command = () => {
         throw new URNError('NAVIGATION_UNAVAILABLE', '原生导航未接入');
-    }) {
+    }, routes) {
         this.pageId = pageId;
         this.featureId = featureId;
         this.port = port;
         this.core = new ClientCore(new PageAdapter(port, () => {
             void this.close();
         }), onError);
-        this.experience = new PageExperience(command, onError);
-        this.environment = Object.freeze({
+        this.experience = new PageExperience(command, onError, 15000, routes);
+        this.environment = Object.freeze(Object.defineProperty({
             lifecycle: this.experience.lifecycle,
             navigation: this.experience.navigation,
             pageId,
@@ -51,7 +51,7 @@ export class ContainerClient {
                     return this.core.subscribe(...args);
                 },
             }),
-        });
+        }, 'host', { value: this.experience.hostEnvironment, enumerable: false }));
     }
     get active() {
         return this.phase === 'active';

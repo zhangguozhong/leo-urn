@@ -1,3 +1,9 @@
+import {
+  ContainerCapabilities,
+  type ContainerCapabilitiesOptions,
+} from './ContainerCapabilities.js';
+import { HostEnvironmentStore, type HostEnvironmentSnapshot } from './HostEnvironment.js';
+import { DiagnosticStore } from './Diagnostic.js';
 import { ChannelDispatcher, validIdentity } from './ChannelDispatcher.js';
 import type { DispatcherOptions, PhysicalChannel, Removable } from './ChannelDispatcher.js';
 import { ContainerClient } from './ContainerClient.js';
@@ -14,6 +20,7 @@ export interface ContainerContext {
   readonly baselineId: string;
 }
 export interface ContainerProps {
+  readonly hostEnvironment?: HostEnvironmentSnapshot;
   readonly featureId: string;
   readonly params: Record<string, unknown>;
   readonly containerContext: ContainerContext;
@@ -42,6 +49,9 @@ export interface LifecyclePort {
   onCloseRequested(listener: (event: CloseRequested) => void): Removable;
 }
 export interface RegistrationOptions {
+  readonly capabilities?: readonly string[];
+  readonly containerCapabilities?: Omit<ContainerCapabilitiesOptions, 'baselineId'>;
+  readonly hostEnvironment?: HostEnvironmentSnapshot;
   readonly baselineId: string;
   readonly onError?: (error: unknown) => void;
   readonly onDiagnostic?: (event: URNDiagnostic) => void;
@@ -93,6 +103,9 @@ function budgetIdentity(options: DispatcherOptions): string {
 /** 所有权属于原生页面；React effect cleanup 只撤销观察，不销毁 Client。 */
 export class PageCoordinator {
   readonly dispatcher: ChannelDispatcher;
+  readonly routes?: ContainerCapabilities;
+  readonly hostEnvironment = new HostEnvironmentStore((error) => this.reportError(error));
+  readonly diagnostics = new DiagnosticStore();
   private readonly pages = new Map<string, ContainerClient>();
   private readonly closed = new Map<string, Promise<void>>();
   private readonly closing = new Map<string, Promise<void>>();
@@ -128,6 +141,26 @@ export class PageCoordinator {
     options: DispatcherOptions = {},
   ) {
     this.configuration = configuration;
+    if (configuration.containerCapabilities)
+      this.routes = new ContainerCapabilities({
+        ...configuration.containerCapabilities,
+        baselineId: configuration.baselineId,
+        moduleIdentity: (target) =>
+          target.kind === 'rn'
+            ? (this.configuration.registry.manifest(target.featureId) ?? null)
+            : (this.configuration.containerCapabilities?.moduleIdentity?.(target) ?? null),
+        dispatch: (target, params, context) => {
+          if (target.kind === 'rn')
+            this.configuration.registry.resolve(target.featureId, params, {
+              capabilities: this.configuration.capabilities,
+              baselineId: this.configuration.baselineId,
+            });
+          const dispatch = this.configuration.containerCapabilities?.dispatch;
+          if (!dispatch) throw new URNError('ROUTING_UNAVAILABLE', '宿主路由已撤销');
+          return dispatch(target, params, context);
+        },
+      });
+    if (configuration.hostEnvironment) this.updateHostEnvironment(configuration.hostEnvironment);
     this.budgetSignature = budgetIdentity(options);
     this.maxRetired = options.maxRetiredChannels ?? channelBudgetDefaults.maxRetiredChannels;
     this.maxRootCommits =
@@ -147,10 +180,13 @@ export class PageCoordinator {
             event.message.length > 32768
           )
             return;
+          if (!validIdentity(event.channelId)) return;
           const client = this.pages.get(event.channelId);
-          if (!client?.active) return;
           try {
-            client.experience.receive(JSON.parse(event.message));
+            const value = JSON.parse(event.message);
+            // Host快照属于当前运行轮次，boot后可能早于Root prepare；不能把新用户域丢掉。
+            if (value?.type === 'hostEnvironment') this.updateHostEnvironment(value.snapshot);
+            else if (client?.active) client.experience.receive(value);
           } catch (error) {
             this.reportError(error);
           }
@@ -181,8 +217,15 @@ export class PageCoordinator {
       throw new URNError('BASELINE_MISMATCH', 'FastRefresh 不能替换运行时基线');
     }
     this.configuration = configuration;
+    if (configuration.hostEnvironment) this.updateHostEnvironment(configuration.hostEnvironment);
     this.revision++;
     for (const observer of this.observers) this.notify(observer);
+  }
+
+  updateHostEnvironment(snapshot: HostEnvironmentSnapshot): void {
+    if (!this.hostEnvironment.update(snapshot)) return;
+    void this.routes?.setUserDomain(snapshot.userDomain).catch((error) => this.reportError(error));
+    for (const client of this.pages.values()) client.experience.hostEnvironment.update(snapshot);
   }
 
   reportError(error: unknown): void {
@@ -195,7 +238,7 @@ export class PageCoordinator {
 
   private diagnostic(stage: string, channelId: string, durationMs?: number): void {
     const root = this.rootCommits.get(channelId);
-    publishDiagnostic(this.configuration.onDiagnostic, {
+    const event = {
       stage,
       runtimeGeneration: this.runtimeGeneration,
       channelId,
@@ -204,7 +247,9 @@ export class PageCoordinator {
         ? { featureId: root.featureId }
         : {}),
       ...(durationMs === undefined ? {} : { durationMs: Math.max(0, durationMs) }),
-    });
+    };
+    this.diagnostics.record({ ...event, timestampMs: Date.now() });
+    publishDiagnostic(this.configuration.onDiagnostic, event);
   }
 
   prepare(props: ContainerProps): PreparedPage {
@@ -222,7 +267,10 @@ export class PageCoordinator {
     if (root && !this.matchesRoot(root, props, context)) {
       throw new URNError('CHANNEL_OWNED', '根视图已属于另一个页面');
     }
-    const feature = this.configuration.registry.resolve(props.featureId, props.params);
+    const feature = this.configuration.registry.resolve(props.featureId, props.params, {
+      capabilities: this.configuration.capabilities,
+      baselineId: this.configuration.baselineId,
+    });
     let client = this.pages.get(context.channelId);
     if (client) {
       if (!this.matchesPage(client, props, context)) {
@@ -256,7 +304,9 @@ export class PageCoordinator {
             throw new URNError('NAVIGATION_UNAVAILABLE', '原生导航未接入');
           this.lifecycle.command(this.runtimeGeneration, context.channelId, command, id, payload);
         },
+        this.routes ? { runtime: this.routes, source: context.channelId } : undefined,
       );
+      client.experience.hostEnvironment.update(this.hostEnvironment.snapshot);
       this.pages.set(context.channelId, client);
       this.pageStarted.set(context.channelId, performance.now());
       this.diagnostic('client.created', context.channelId);
@@ -264,6 +314,7 @@ export class PageCoordinator {
         void this.close(context.channelId);
       });
     }
+    if (props.hostEnvironment) this.updateHostEnvironment(props.hostEnvironment);
     return { client, feature };
   }
 
@@ -337,6 +388,7 @@ export class PageCoordinator {
     await client.ready();
     if (!this.owns(client) || this.readyPages.has(client)) return;
     this.readyPages.add(client);
+    this.routes?.setReady(true);
     this.diagnostic(
       'client.ready',
       client.port.channelId,
@@ -401,7 +453,10 @@ export class PageCoordinator {
     if (!client && this.closed.size >= this.maxRetired) return this.ignoredClose;
     const closeStarted = performance.now();
     // close 先封闭业务入口，但保留 Port 供 Core 自己发送取消、退订和关闭控制。
-    const cleanup = client?.close() ?? Promise.resolve();
+    const cleanup = Promise.all([
+      client?.close() ?? Promise.resolve(),
+      this.routes?.invalidate(channelId) ?? Promise.resolve(),
+    ]);
     const task = cleanup.then(() => {
       this.dispatcher.retire(channelId);
       this.pages.delete(channelId);
@@ -419,6 +474,16 @@ export class PageCoordinator {
     return task;
   }
 
+  /** 清理失败不会释放页面owner；宿主恢复资源后可重试同一关闭屏障。 */
+  async retryClose(channelId: string): Promise<void> {
+    const client = this.pages.get(channelId);
+    if (!client) return;
+    await this.routes?.retryCleanup(channelId);
+    this.closed.delete(channelId);
+    this.closing.delete(channelId);
+    return this.close(channelId);
+  }
+
   private notify(callback: () => void): void {
     try {
       callback();
@@ -430,9 +495,14 @@ export class PageCoordinator {
   end(): Promise<void> {
     if (this.ending) return this.ending;
     this.ended = true;
+    this.routes?.setReady(false);
+    this.hostEnvironment.close();
     this.closeSubscription.remove();
     this.pageSubscription?.remove();
-    this.ending = Promise.all([...this.pages.keys()].map((id) => this.close(id))).then(() => {
+    this.ending = Promise.all([
+      this.routes?.invalidate(),
+      ...[...this.pages.keys()].map((id) => this.close(id)),
+    ]).then(() => {
       this.dispatcher.close();
       this.closed.clear();
       this.rootCommits.clear();
@@ -471,3 +541,5 @@ function lifecycleCommandAvailable(
 ): port is LifecyclePort & Required<Pick<LifecyclePort, 'command'>> {
   return typeof port.command === 'function';
 }
+
+export { ContainerCapabilities };

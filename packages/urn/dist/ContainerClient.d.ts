@@ -11,7 +11,10 @@ export declare class ContainerClient {
     private closing?;
     readonly environment: FeatureEnvironment;
     readonly experience: PageExperience;
-    constructor(pageId: string, featureId: string, port: ChannelPort, onError: (error: unknown) => void, command?: (command: string, id: string, payload: string) => void);
+    constructor(pageId: string, featureId: string, port: ChannelPort, onError: (error: unknown) => void, command?: (command: string, id: string, payload: string) => void, routes?: {
+        runtime: import('./ContainerCapabilities.js').ContainerCapabilities;
+        source: string;
+    });
     get active(): boolean;
     private assertActive;
     ready(): Promise<void>;

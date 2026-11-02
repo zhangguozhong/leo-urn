@@ -10,6 +10,7 @@ import UIKit
     public internal(set) var lifecycle = URNPageLifecycle()
     public internal(set) var channelId: String?
     public internal(set) var canRetry = false
+    public var canRetryCleanup: Bool { coordinator?.requiresCleanupRetry(self) ?? false }
     public internal(set) var navigationError: Error?
     public internal(set) var canRetryNavigationClose = false
 
@@ -22,6 +23,14 @@ import UIKit
             return
         }
         coordinator.retry(self, completion: completion)
+    }
+
+    public func retryCleanup(completion: @escaping (Result<Void, Error>) -> Void = { _ in }) {
+        guard let coordinator else {
+            completion(.failure(URNContainerError("DISCONNECTED", "容器已释放")))
+            return
+        }
+        coordinator.retryCleanup(self, completion: completion)
     }
 
     /// 导航移除和资源清理完成后才返回结果；直接 close() 仍只负责资源清理。

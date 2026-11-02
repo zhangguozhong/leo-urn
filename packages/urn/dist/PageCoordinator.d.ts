@@ -1,3 +1,6 @@
+import { ContainerCapabilities, type ContainerCapabilitiesOptions } from './ContainerCapabilities.js';
+import { HostEnvironmentStore, type HostEnvironmentSnapshot } from './HostEnvironment.js';
+import { DiagnosticStore } from './Diagnostic.js';
 import { ChannelDispatcher } from './ChannelDispatcher.js';
 import type { DispatcherOptions, PhysicalChannel, Removable } from './ChannelDispatcher.js';
 import { ContainerClient } from './ContainerClient.js';
@@ -11,6 +14,7 @@ export interface ContainerContext {
     readonly baselineId: string;
 }
 export interface ContainerProps {
+    readonly hostEnvironment?: HostEnvironmentSnapshot;
     readonly featureId: string;
     readonly params: Record<string, unknown>;
     readonly containerContext: ContainerContext;
@@ -37,6 +41,9 @@ export interface LifecyclePort {
     onCloseRequested(listener: (event: CloseRequested) => void): Removable;
 }
 export interface RegistrationOptions {
+    readonly capabilities?: readonly string[];
+    readonly containerCapabilities?: Omit<ContainerCapabilitiesOptions, 'baselineId'>;
+    readonly hostEnvironment?: HostEnvironmentSnapshot;
     readonly baselineId: string;
     readonly onError?: (error: unknown) => void;
     readonly onDiagnostic?: (event: URNDiagnostic) => void;
@@ -55,6 +62,9 @@ export declare class PageCoordinator {
     readonly runtimeGeneration: string;
     private readonly lifecycle;
     readonly dispatcher: ChannelDispatcher;
+    readonly routes?: ContainerCapabilities;
+    readonly hostEnvironment: HostEnvironmentStore;
+    readonly diagnostics: DiagnosticStore;
     private readonly pages;
     private readonly closed;
     private readonly closing;
@@ -77,6 +87,7 @@ export declare class PageCoordinator {
     readonly subscribe: (observer: () => void) => (() => void);
     constructor(runtimeGeneration: string, channel: PhysicalChannel, lifecycle: LifecyclePort, configuration: RuntimeConfiguration, options?: DispatcherOptions);
     update(configuration: RuntimeConfiguration, budget?: DispatcherOptions): void;
+    updateHostEnvironment(snapshot: HostEnvironmentSnapshot): void;
     reportError(error: unknown): void;
     private diagnostic;
     prepare(props: ContainerProps): PreparedPage;
@@ -91,6 +102,8 @@ export declare class PageCoordinator {
     reportContentReady(client: ContainerClient): void;
     startupFailed(props: ContainerProps, error: unknown): void;
     close(channelId: string): Promise<void>;
+    /** 清理失败不会释放页面owner；宿主恢复资源后可重试同一关闭屏障。 */
+    retryClose(channelId: string): Promise<void>;
     private notify;
     end(): Promise<void>;
 }
@@ -100,4 +113,4 @@ type RuntimeHost = {
 };
 /** Symbol 与 globalThis 跨模块替换稳定，旧代 Store 立即停止接纳新业务。 */
 export declare function getPageCoordinator(generation: string, channel: PhysicalChannel, lifecycle: LifecyclePort, configuration: RuntimeConfiguration, host?: RuntimeHost, budget?: DispatcherOptions): PageCoordinator;
-export {};
+export { ContainerCapabilities };

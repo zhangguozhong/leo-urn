@@ -29,10 +29,11 @@
     NSUInteger _messages, _bytes, _controls, _flying, _flyingControls, _cursor;
     NSUInteger _maxMessages, _maxBytes, _pageMessages, _pageBytes, _maxFrame, _maxChannels;
     NSUInteger _window, _globalWindow, _batch;
-    BOOL _scheduled, _invalidated;
+    BOOL _scheduled, _invalidated, _deliveryEnabled;
 }
 - (instancetype)initWithChannelBudget:(NSDictionary<NSString *, NSNumber *> *)budget {
     if ((self = [super init])) {
+        _deliveryEnabled = YES;
         _pages = [NSMutableDictionary new];
         _inFlight = [NSMutableDictionary new];
         _order = [NSMutableArray new];
@@ -52,6 +53,20 @@
     }
     return self;
 }
+- (BOOL)deliveryEnabled {
+    @synchronized(self) {
+        return _deliveryEnabled;
+    }
+}
+- (void)setDeliveryEnabled:(BOOL)enabled {
+    @synchronized(self) {
+        if (_invalidated)
+            return;
+        _deliveryEnabled = enabled;
+        if (enabled)
+            [self scheduleIfDeliverable];
+    }
+}
 - (void)activateGeneration:(NSString *)generation {
     @synchronized(self) {
         if (!_generation && !_invalidated)
@@ -68,7 +83,7 @@
     }
 }
 - (void)schedule {
-    if (_scheduled || _invalidated)
+    if (_scheduled || _invalidated || !_deliveryEnabled)
         return;
     _scheduled = YES;
     __weak URNMessageOutbox *weakSelf = self;
@@ -142,13 +157,15 @@
 - (void)drain {
     @synchronized(self) {
         _scheduled = NO;
+        if (!_deliveryEnabled)
+            return;
     }
     for (NSUInteger sent = 0; sent < _batch; sent++) {
         URNOutboundFrame *next;
         void (^delivery)(NSString *, NSString *, NSString *, NSString *, NSString *);
         NSString *generation;
         @synchronized(self) {
-            if (_invalidated || !_order.count)
+            if (_invalidated || !_deliveryEnabled || !_order.count)
                 return;
             for (NSUInteger i = 0; i < _order.count; i++) {
                 _cursor %= _order.count;
@@ -191,6 +208,8 @@
     }
 }
 - (void)scheduleIfDeliverable {
+    if (!_deliveryEnabled)
+        return;
     for (URNOutboundPage *page in _pages.allValues) {
         for (URNOutboundFrame *frame in page.waiting) {
             if ((frame.control && _flyingControls < _maxChannels) ||
@@ -256,6 +275,7 @@
 - (void)invalidate {
     @synchronized(self) {
         _invalidated = YES;
+        _deliveryEnabled = NO;
         [_pages removeAllObjects];
         [_order removeAllObjects];
         [_inFlight removeAllObjects];

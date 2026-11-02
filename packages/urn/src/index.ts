@@ -12,3 +12,18 @@ export type {
   PageNavigation,
   PageResult,
 } from './PageExperience.js';
+export { ContainerCapabilities } from './ContainerCapabilities.js';
+export type {
+  RouteTarget,
+  RouteDefinition,
+  RouteOwner,
+  RouteOperation,
+  RouteContext,
+  ContainerCapabilitiesOptions,
+  ContainerSnapshot,
+} from './ContainerCapabilities.js';
+export type { FeatureModule, FeaturePreflight } from './FeatureDefinition.js';
+export { HostEnvironmentStore } from './HostEnvironment.js';
+export type { HostEnvironment, HostEnvironmentSnapshot } from './HostEnvironment.js';
+export { DiagnosticStore } from './Diagnostic.js';
+export { DiagnosticPanel } from './DiagnosticPanel.js';

@@ -1,6 +1,6 @@
 {
   "name": "leo-urn-tooling",
-  "version": "0.2.0-preview.3",
+  "version": "0.3.0-preview.1",
   "type": "module",
   "description": "URN 工程开发与构建工具，提供依赖校验、基线管理和 iOS/Android 产物检查。",
   "license": "MIT",

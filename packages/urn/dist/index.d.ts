@@ -6,3 +6,10 @@ export type { BusinessBridge, FeatureEnvironment } from './FeatureEnvironment.js
 export { registerFeatures } from './NativeBindings.js';
 export type { ContainerContext, ContainerProps, RegistrationOptions } from './PageCoordinator.js';
 export type { PageLifecycle, PageLifecycleSnapshot, PageNavigation, PageResult, } from './PageExperience.js';
+export { ContainerCapabilities } from './ContainerCapabilities.js';
+export type { RouteTarget, RouteDefinition, RouteOwner, RouteOperation, RouteContext, ContainerCapabilitiesOptions, ContainerSnapshot, } from './ContainerCapabilities.js';
+export type { FeatureModule, FeaturePreflight } from './FeatureDefinition.js';
+export { HostEnvironmentStore } from './HostEnvironment.js';
+export type { HostEnvironment, HostEnvironmentSnapshot } from './HostEnvironment.js';
+export { DiagnosticStore } from './Diagnostic.js';
+export { DiagnosticPanel } from './DiagnosticPanel.js';

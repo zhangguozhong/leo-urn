@@ -5,12 +5,15 @@ import { pathToFileURL } from 'node:url';
 import { checkBaseline } from './baseline.mjs';
 import { checkDependencies, dependencyRecommendations } from './dependencies.mjs';
 import { createArtifactManifest, verifyArtifacts, inspectBundlePhases } from './artifacts.mjs';
+import { runContainerTools } from './container-tools.mjs';
 
 const help = `URN 依赖、平台基线和离线产物检查
 用法：
   node tooling/urn/cli.mjs check-baseline --baseline FILE --app DIR [--release]
   node tooling/urn/cli.mjs doctor --app DIR
   node tooling/urn/cli.mjs sync --dry-run --app DIR
+  urn capabilities --app DIR
+  urn upgrade --app DIR --target PROFILE --dry-run
   node tooling/urn/cli.mjs create-artifacts --app DIR --built-app APP --baseline FILE --project PBXPROJ --target NAME [--manifest FILE] [--release]
   node tooling/urn/cli.mjs verify-artifacts --app DIR --built-app APP --baseline FILE --project PBXPROJ --target NAME [--manifest FILE] [--release]
   urn android-build --app DIR --variant debug|release [--metro] [--bundle] [--install --launch]
@@ -26,6 +29,7 @@ export function run(argv, write = console.log) {
     return;
   }
   const [command, ...args] = argv;
+  if (['capabilities', 'upgrade'].includes(command)) return runContainerTools(argv, write);
   const appIndex = args.indexOf('--app');
   if (
     command.startsWith('android-') ||

@@ -12,6 +12,12 @@ import Foundation
     /// 目标页权限由宿主重新决定，可通过抛错拒绝跳转，不继承调用页的权限。
     public var navigationPageConfiguration: (URNPageHandle, String) throws -> URNPageConfiguration =
         { _, _ in .init() }
+    /// 0保留旧行为；显式prewarm只占用同一个尚未绑定页面的Host。
+    public var mixedRouting: URNMixedRouting?
+    public var prewarmTTL: TimeInterval = 0
+    public var initialEnvironment = URNHostEnvironment()
+    public var modules: [URNModuleManifest] = []
+    public var availableCapabilities: Set<String> = []
     public var maxPages = 16
     public var channelBudget = URNChannelBudget()
     /// 每次导航打开/关闭的原生期限；取消确认不代表 UIKit 已移除页面。
@@ -42,6 +48,12 @@ import Foundation
     }
     func validate() throws {
         try channelBudget.validate()
+        try mixedRouting?.validate()
+        guard prewarmTTL.isFinite, prewarmTTL >= 0, prewarmTTL <= 3600 else {
+            throw URNContainerError("INVALID_CONFIGURATION", "预热TTL须在0至3600秒")
+        }
+        try URNModuleManifest.validate(modules)
+        try initialEnvironment.validate()
         guard (1...64).contains(maxPages), maxPages <= channelBudget.maxChannels,
             [startupTimeout, closeWindow, cleanupTimeout, navigationTimeout].allSatisfy({
                 $0.isFinite && $0 > 0 && $0 <= 300
@@ -63,6 +75,17 @@ import Foundation
 
 /// 权限、topic 和业务资源屏障由宿主按页面注入，不写死在公共容器中。
 @MainActor public struct URNPageConfiguration {
+    public var captureState: (URNPageHandle, @escaping (Result<Any, Error>) -> Void) -> Void = {
+        _, done in done(.success(NSNull()))
+    }
+    public var restoreState: (URNPageHandle, Any, @escaping (Result<Void, Error>) -> Void) -> Void =
+        { _, value, done in
+            if value is NSNull {
+                done(.success(()))
+            } else {
+                done(.failure(URNContainerError("RESTORE_UNAVAILABLE", "宿主未接入业务恢复钩子")))
+            }
+        }
     public var allowedPermissions: Set<String> = []
     public var allowedEventTopics: Set<String>?
     public var cleanup: (@escaping @MainActor (Result<Void, Error>) -> Void) -> Void = { done in

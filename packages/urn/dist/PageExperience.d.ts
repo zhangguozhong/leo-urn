@@ -1,3 +1,5 @@
+import { HostEnvironmentStore } from './HostEnvironment.js';
+import type { ContainerCapabilities, RouteOperation } from './ContainerCapabilities.js';
 export interface PageLifecycleSnapshot {
     readonly visible: boolean;
     readonly foreground: boolean;
@@ -15,6 +17,14 @@ export type PageResult = {
     readonly status: 'cancelled';
 };
 export interface PageNavigation {
+    /** 与原生App调用openRoute共用dispatcher、guard与生命周期。完成值表示目标真实就绪。 */
+    openDeepLink(url: string, params?: Record<string, unknown>, options?: {
+        readonly signal?: AbortSignal;
+    }): Promise<PageResult>;
+    openRoute?(url: string, options?: {
+        params?: Record<string, unknown>;
+        signal?: AbortSignal;
+    }): RouteOperation;
     open(featureId: string, params?: Record<string, unknown>, options?: {
         readonly presentation?: 'push' | 'present';
     }): Promise<PageResult>;
@@ -31,9 +41,13 @@ export declare class PageExperience {
     private nextId;
     private readonly listeners;
     private readonly pending;
+    readonly hostEnvironment: HostEnvironmentStore;
     readonly lifecycle: PageLifecycle;
     readonly navigation: PageNavigation;
-    constructor(command: (command: string, id: string, payload: string) => void, onError: (error: unknown) => void, launchTimeout?: number);
+    constructor(command: (command: string, id: string, payload: string) => void, onError: (error: unknown) => void, launchTimeout?: number, routes?: {
+        runtime: ContainerCapabilities;
+        source: string;
+    });
     private assertActive;
     private encode;
     private notify;

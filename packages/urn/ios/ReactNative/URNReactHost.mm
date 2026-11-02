@@ -139,6 +139,8 @@ class URNRuntimeSentinel final : public facebook::jsi::HostObject {
         _outbox = [[URNMessageOutbox alloc] initWithChannelBudget:_channelBudget];
         if (!_inbox || !_outbox)
             return nil;
+        // Module构造不证明JS监听已安装；boot是独立于hello响应的放行确认。
+        _outbox.deliveryEnabled = NO;
         __weak URNReactHost *weakSelf = self;
         _outbox.delivery = ^(NSString *generation, NSString *channel, NSString *deliveryId,
                              NSString *kind, NSString *message) {
@@ -256,6 +258,7 @@ class URNRuntimeSentinel final : public facebook::jsi::HostObject {
             return;
         self->_booted = YES;
         self->_lifecycleReady = YES;
+        self->_outbox.deliveryEnabled = YES;
         [self flushCloseRequests];
         if (self.onBooted)
             self.onBooted();
@@ -290,7 +293,7 @@ class URNRuntimeSentinel final : public facebook::jsi::HostObject {
         NSString *generation = self.generation;
         if (_stopping || !generation || ![_inbox containsGeneration:generation channel:channel])
             return nil;
-        NSDictionary *properties = @{
+        NSMutableDictionary *properties = [@{
             @"featureId" : feature,
             @"params" : params,
             @"containerContext" : @{
@@ -299,7 +302,9 @@ class URNRuntimeSentinel final : public facebook::jsi::HostObject {
                 @"runtimeGeneration" : generation,
                 @"baselineId" : baseline
             }
-        };
+        } mutableCopy];
+        if (self.pageEnvironment)
+            properties[@"hostEnvironment"] = self.pageEnvironment;
         return [_factory.rootViewFactory viewWithModuleName:@"URNRoot"
                                           initialProperties:properties
                                               launchOptions:nil];
@@ -404,6 +409,7 @@ class URNRuntimeSentinel final : public facebook::jsi::HostObject {
             ![self->_inbox containsGeneration:generation channel:channel])
             return;
         self->_lifecycleReady = YES;
+        self->_outbox.deliveryEnabled = YES;
         [self flushCloseRequests];
         if (self.onLifecycle)
             self.onLifecycle(channel, event, code, message);

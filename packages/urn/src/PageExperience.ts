@@ -1,4 +1,6 @@
 import { assertJSON, utf8Size } from 'aeris-client-core/protocol';
+import { HostEnvironmentStore } from './HostEnvironment.js';
+import type { ContainerCapabilities, RouteOperation } from './ContainerCapabilities.js';
 import { URNError } from './URNError.js';
 
 export interface PageLifecycleSnapshot {
@@ -15,6 +17,16 @@ export type PageResult =
   | { readonly status: 'completed'; readonly data?: Record<string, unknown> }
   | { readonly status: 'cancelled' };
 export interface PageNavigation {
+  /** 与原生App调用openRoute共用dispatcher、guard与生命周期。完成值表示目标真实就绪。 */
+  openDeepLink(
+    url: string,
+    params?: Record<string, unknown>,
+    options?: { readonly signal?: AbortSignal },
+  ): Promise<PageResult>;
+  openRoute?(
+    url: string,
+    options?: { params?: Record<string, unknown>; signal?: AbortSignal },
+  ): RouteOperation;
   open(
     featureId: string,
     params?: Record<string, unknown>,
@@ -28,6 +40,8 @@ interface Pending {
   resolve: (result: PageResult) => void;
   reject: (error: unknown) => void;
   timer?: ReturnType<typeof setTimeout>;
+  cleanup?: () => void;
+  route?: boolean;
 }
 
 function jsonObject(value: unknown): asserts value is Record<string, unknown> {
@@ -46,6 +60,7 @@ export class PageExperience {
   private nextId = 0;
   private readonly listeners = new Set<(state: PageLifecycleSnapshot) => void>();
   private readonly pending = new Map<string, Pending>();
+  readonly hostEnvironment: HostEnvironmentStore;
   readonly lifecycle: PageLifecycle;
   readonly navigation: PageNavigation;
 
@@ -53,7 +68,9 @@ export class PageExperience {
     private readonly command: (command: string, id: string, payload: string) => void,
     private readonly onError: (error: unknown) => void,
     private readonly launchTimeout = 15000,
+    routes?: { runtime: ContainerCapabilities; source: string },
   ) {
+    this.hostEnvironment = new HostEnvironmentStore(onError);
     const owner = this;
     this.lifecycle = Object.freeze({
       get snapshot() {
@@ -68,6 +85,62 @@ export class PageExperience {
       },
     });
     this.navigation = Object.freeze({
+      openDeepLink: (
+        url: string,
+        params: Record<string, unknown> = {},
+        options?: { readonly signal?: AbortSignal },
+      ): Promise<PageResult> => {
+        this.assertActive();
+        if (typeof url !== 'string' || url.length > 4096 || !url)
+          return Promise.reject(new URNError('INVALID_ROUTE', '深链非法'));
+        if (this.pending.size >= 16)
+          return Promise.reject(new URNError('NAVIGATION_LIMIT', '路由请求达到上限'));
+        const payload = this.encode({ url, params });
+        const id = String(++this.nextId);
+        return new Promise<PageResult>((resolve, reject) => {
+          const cancel = (error: unknown) => {
+            this.reject(id, error);
+            try {
+              this.command('cancelRoute', id, '{}');
+            } catch (error) {
+              this.report(error);
+            }
+          };
+          const entry: Pending = {
+            resolve,
+            reject,
+            route: true,
+            cleanup: () => options?.signal?.removeEventListener('abort', abort),
+          };
+          const abort = () => cancel(new URNError('CANCELLED', '深链已取消'));
+          this.pending.set(id, entry);
+          if (options?.signal?.aborted) {
+            abort();
+            return;
+          }
+          options?.signal?.addEventListener('abort', abort, { once: true });
+          entry.timer = setTimeout(
+            () => cancel(new URNError('ROUTE_TIMEOUT', '宿主深链超过期限')),
+            this.launchTimeout,
+          );
+          try {
+            this.command('route', id, payload);
+          } catch (error) {
+            this.reject(id, error);
+          }
+        });
+      },
+      ...(routes
+        ? {
+            openRoute: (
+              url: string,
+              options?: { params?: Record<string, unknown>; signal?: AbortSignal },
+            ) => {
+              this.assertActive();
+              return routes.runtime.open(url, { ...options, source: routes.source });
+            },
+          }
+        : {}),
       open: async (
         featureId: string,
         params: Record<string, unknown> = {},
@@ -156,6 +229,7 @@ export class PageExperience {
     const entry = this.pending.get(id);
     if (!entry) return;
     clearTimeout(entry.timer);
+    entry.cleanup?.();
     this.pending.delete(id);
     entry.reject(error);
   }
@@ -164,6 +238,10 @@ export class PageExperience {
     if (this.state.closed) return;
     try {
       jsonObject(value);
+      if (value.type === 'hostEnvironment') {
+        this.hostEnvironment.update(value.snapshot);
+        return;
+      }
       if (value.type === 'lifecycle') {
         if (
           !Number.isSafeInteger(value.seq) ||
@@ -208,6 +286,7 @@ export class PageExperience {
           throw Error('返回状态不合法');
         if (result.data !== undefined) jsonObject(result.data);
         clearTimeout(entry.timer);
+        entry.cleanup?.();
         this.pending.delete(value.id);
         entry.resolve(
           result.status === 'completed'
@@ -225,7 +304,16 @@ export class PageExperience {
     this.state = Object.freeze({ ...this.state, visible: false, closed: true });
     for (const listener of [...this.listeners]) this.notify(listener);
     this.listeners.clear();
-    for (const id of this.pending.keys())
+    this.hostEnvironment.close();
+    for (const [id, entry] of this.pending) {
+      if (entry.route) {
+        try {
+          this.command('cancelRoute', id, '{}');
+        } catch (error) {
+          this.report(error);
+        }
+      }
       this.reject(id, new URNError('DISCONNECTED', '调用页面已关闭'));
+    }
   }
 }

@@ -17,6 +17,7 @@ export function registerFeatures(registry, options) {
     const rawBudget = globalThis.__URNChannelBudget;
     const budget = rawBudget === undefined ? undefined : readRuntimeBudget(rawBudget);
     const store = getPageCoordinator(generation, NativeChannel, NativeLifecycle, {
+        ...options,
         registry,
         baselineId: options.baselineId,
         onError: options.onError,
@@ -37,5 +38,6 @@ export function registerFeatures(registry, options) {
         };
     });
     // 等 bundle 顶层执行退出后确认启动，原生才能安全处理“打开后立即关闭”。
-    setTimeout(() => NativeLifecycle.boot(generation), 0);
+    // 冷预热尚无Activity时RN计时器暂停；微任务仍保证顶层bundle先退出。
+    queueMicrotask(() => NativeLifecycle.boot(generation));
 }

@@ -23,48 +23,65 @@ internal class URNCloseBarrier(
     private var stopEpoch = 0L
     private var deadline = scheduleDeadline()
 
-    private fun scheduleDeadline() = dispatcher.schedule(timeoutMs) {
-        runCatching(onTimeout)
-        report(Result.failure(TimeoutException("页面清理尚未完成，不能报告资源已经释放")))
-    }
-
-    fun disposed() = dispatcher.execute { jsDisposed = true; advance() }
-    fun cleanupCompleted(result: Result<Unit>) = dispatcher.execute {
-        if (!cleanupSettled) {
-            cleanupSettled = true
-            cleanupSucceeded = result.isSuccess
-            if (result.isFailure) report(result)
+    private fun scheduleDeadline() =
+        dispatcher.schedule(timeoutMs) {
+            runCatching(onTimeout)
+            report(Result.failure(TimeoutException("页面清理尚未完成，不能报告资源已经释放")))
         }
-        advance()
-    }
+
+    fun disposed() =
+        dispatcher.execute {
+            jsDisposed = true
+            advance()
+        }
+
+    fun cleanupCompleted(result: Result<Unit>) =
+        dispatcher.execute {
+            if (!cleanupSettled) {
+                cleanupSettled = true
+                cleanupSucceeded = result.isSuccess
+                if (result.isFailure) report(result)
+            }
+            advance()
+        }
 
     private fun advance() {
         if (!jsDisposed || !cleanupSucceeded || stopStarted) return
         stopStarted = true
         val epoch = ++stopEpoch
         try {
-            stopSurface { result -> dispatcher.execute {
-                if (epoch == stopEpoch && !stopSettled) {
-                    stopSettled = true
-                    stopSucceeded = result.isSuccess
-                    if (result.isSuccess) {
-                        released = true
-                        deadline.cancel()
-                        report(Result.success(Unit))
-                        runCatching(onReleased)
-                    } else report(result)
+            stopSurface { result ->
+                dispatcher.execute {
+                    if (epoch == stopEpoch && !stopSettled) {
+                        stopSettled = true
+                        stopSucceeded = result.isSuccess
+                        if (result.isSuccess) {
+                            released = true
+                            deadline.cancel()
+                            report(Result.success(Unit))
+                            runCatching(onReleased)
+                        } else report(result)
+                    }
                 }
-            } }
+            }
         } catch (error: Exception) {
             stopSettled = true
             report(Result.failure(error))
         }
     }
 
-    val requiresCleanupRetry: Boolean get() = !cleanupSucceeded
+    val canRetry: Boolean
+        get() =
+            !released && ((cleanupSettled && !cleanupSucceeded) || (stopSettled && !stopSucceeded))
+
+    val requiresCleanupRetry: Boolean
+        get() = !cleanupSucceeded
 
     /** 宿主登记完成回调后再驱动停止重试，不重复已经成功的业务清理。 */
-    fun continueSurfaceRetry() { dispatcher.checkThread(); advance() }
+    fun continueSurfaceRetry() {
+        dispatcher.checkThread()
+        advance()
+    }
 
     /** 只重试已经明确失败的阶段；超时仍未回调的工作绝不并发重启。 */
     fun retry(): Boolean {

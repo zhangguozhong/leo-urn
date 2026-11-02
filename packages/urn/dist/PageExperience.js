@@ -1,4 +1,5 @@
 import { assertJSON, utf8Size } from 'aeris-client-core/protocol';
+import { HostEnvironmentStore } from './HostEnvironment.js';
 import { URNError } from './URNError.js';
 function jsonObject(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value))
@@ -19,12 +20,14 @@ export class PageExperience {
     nextId = 0;
     listeners = new Set();
     pending = new Map();
+    hostEnvironment;
     lifecycle;
     navigation;
-    constructor(command, onError, launchTimeout = 15000) {
+    constructor(command, onError, launchTimeout = 15000, routes) {
         this.command = command;
         this.onError = onError;
         this.launchTimeout = launchTimeout;
+        this.hostEnvironment = new HostEnvironmentStore(onError);
         const owner = this;
         this.lifecycle = Object.freeze({
             get snapshot() {
@@ -40,6 +43,54 @@ export class PageExperience {
             },
         });
         this.navigation = Object.freeze({
+            openDeepLink: (url, params = {}, options) => {
+                this.assertActive();
+                if (typeof url !== 'string' || url.length > 4096 || !url)
+                    return Promise.reject(new URNError('INVALID_ROUTE', '深链非法'));
+                if (this.pending.size >= 16)
+                    return Promise.reject(new URNError('NAVIGATION_LIMIT', '路由请求达到上限'));
+                const payload = this.encode({ url, params });
+                const id = String(++this.nextId);
+                return new Promise((resolve, reject) => {
+                    const cancel = (error) => {
+                        this.reject(id, error);
+                        try {
+                            this.command('cancelRoute', id, '{}');
+                        }
+                        catch (error) {
+                            this.report(error);
+                        }
+                    };
+                    const entry = {
+                        resolve,
+                        reject,
+                        route: true,
+                        cleanup: () => options?.signal?.removeEventListener('abort', abort),
+                    };
+                    const abort = () => cancel(new URNError('CANCELLED', '深链已取消'));
+                    this.pending.set(id, entry);
+                    if (options?.signal?.aborted) {
+                        abort();
+                        return;
+                    }
+                    options?.signal?.addEventListener('abort', abort, { once: true });
+                    entry.timer = setTimeout(() => cancel(new URNError('ROUTE_TIMEOUT', '宿主深链超过期限')), this.launchTimeout);
+                    try {
+                        this.command('route', id, payload);
+                    }
+                    catch (error) {
+                        this.reject(id, error);
+                    }
+                });
+            },
+            ...(routes
+                ? {
+                    openRoute: (url, options) => {
+                        this.assertActive();
+                        return routes.runtime.open(url, { ...options, source: routes.source });
+                    },
+                }
+                : {}),
             open: async (featureId, params = {}, options) => {
                 this.assertActive();
                 if (this.pending.size >= 16)
@@ -131,6 +182,7 @@ export class PageExperience {
         if (!entry)
             return;
         clearTimeout(entry.timer);
+        entry.cleanup?.();
         this.pending.delete(id);
         entry.reject(error);
     }
@@ -139,6 +191,10 @@ export class PageExperience {
             return;
         try {
             jsonObject(value);
+            if (value.type === 'hostEnvironment') {
+                this.hostEnvironment.update(value.snapshot);
+                return;
+            }
             if (value.type === 'lifecycle') {
                 if (!Number.isSafeInteger(value.seq) ||
                     typeof value.seq !== 'number' ||
@@ -188,6 +244,7 @@ export class PageExperience {
                 if (result.data !== undefined)
                     jsonObject(result.data);
                 clearTimeout(entry.timer);
+                entry.cleanup?.();
                 this.pending.delete(value.id);
                 entry.resolve(result.status === 'completed'
                     ? { status: 'completed', ...(result.data === undefined ? {} : { data: result.data }) }
@@ -205,7 +262,17 @@ export class PageExperience {
         for (const listener of [...this.listeners])
             this.notify(listener);
         this.listeners.clear();
-        for (const id of this.pending.keys())
+        this.hostEnvironment.close();
+        for (const [id, entry] of this.pending) {
+            if (entry.route) {
+                try {
+                    this.command('cancelRoute', id, '{}');
+                }
+                catch (error) {
+                    this.report(error);
+                }
+            }
             this.reject(id, new URNError('DISCONNECTED', '调用页面已关闭'));
+        }
     }
 }

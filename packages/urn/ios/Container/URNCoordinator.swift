@@ -23,6 +23,103 @@ import UIKit
     private var runtimeFailure: Error?
     private var bootWork: DispatchWorkItem?
     private var runtimeStartedAt = ProcessInfo.processInfo.systemUptime
+    private lazy var mixedRouter: URNMixedRouter? = configuration.mixedRouting.map { supplied in
+        var bound = supplied
+        bound.dispatch = { [weak self] target, params, source, completion in
+            guard let self else {
+                completion(.failure(URNContainerError("DISCONNECTED", "容器已释放")))
+                return URNRouteOperation { $0(.success(())) }
+            }
+            guard case .rn(let featureId) = target else {
+                return supplied.dispatch(target, params, source, completion)
+            }
+            var handle: URNPageHandle?
+            var cancelled = false
+            do {
+                let pagePolicy =
+                    try self.records.values.first(where: { $0.handle.controller === source }).map {
+                        try self.configuration.navigationPageConfiguration($0.handle, featureId)
+                    } ?? URNPageConfiguration()
+                let page = try self.open(
+                    featureId: featureId, params: params, page: pagePolicy,
+                    onReady: { page, result in
+                        switch result {
+                        case .failure(let error): completion(.failure(error))
+                        case .success:
+                            completion(
+                                .success(
+                                    URNRouteOwner(
+                                        id: page.id, page: page,
+                                        close: { done in
+                                            let finish: (Result<Void, Error>) -> Void = { result in
+                                                guard case .success = result else {
+                                                    done(result)
+                                                    return
+                                                }
+                                                if page.controller.isAttachedToHost {
+                                                    self.configuration.navigator.close(
+                                                        page, completion: done)
+                                                } else {
+                                                    done(.success(()))
+                                                }
+                                            }
+                                            if page.canRetryCleanup {
+                                                page.retryCleanup(completion: finish)
+                                            } else {
+                                                page.close(completion: finish)
+                                            }
+                                        }, capture: { done in pagePolicy.captureState(page, done) },
+                                        restore: { state, done in
+                                            pagePolicy.restoreState(page, state, done)
+                                        })))
+                        }
+                    })
+                handle = page
+                self.configuration.navigator.open(page, from: source, presentation: .push) {
+                    result in
+                    if case .failure(let error) = result {
+                        self.close(page)
+                        completion(.failure(error))
+                    }
+                    if cancelled {
+                        self.configuration.navigator.close(page) { _ in self.close(page) }
+                    }
+                }
+            } catch { completion(.failure(error)) }
+            return URNRouteOperation { done in
+                cancelled = true
+                guard let page = handle else {
+                    done(.success(()))
+                    return
+                }
+                // 取消仅发起关闭；dispatcher的迟到owner仍由Router在真实屏障后回收。
+                let finished: (Result<Void, Error>) -> Void = { result in
+                    guard case .success = result else {
+                        done(result)
+                        return
+                    }
+                    if page.controller.isAttachedToHost {
+                        self.configuration.navigator.close(page, completion: done)
+                    } else {
+                        done(.success(()))
+                    }
+                }
+                if page.canRetryCleanup {
+                    page.retryCleanup(completion: finished)
+                } else {
+                    self.close(page, completion: finished)
+                }
+            }
+        }
+        return URNMixedRouter(
+            bound, moduleIdentity: { [weak self] in self?.moduleCompatibility ?? "" })
+    }
+    private var routingCleanupPending = 0
+    private var routeRequests: [String: URNRouteOperation] = [:]
+    private var warmExpiry: Date?
+    private var warmWork: DispatchWorkItem?
+    private var memoryObservation: URNMemoryObservation?
+    private var environment: URNHostEnvironment
     private var runtimeStopStartedAt: TimeInterval?
 
     private final class Record {
@@ -79,6 +176,12 @@ import UIKit
 
     public init(configuration: URNConfiguration) {
         self.configuration = configuration
+        self.environment = configuration.initialEnvironment
+        memoryObservation = URNMemoryObservation(
+            NotificationCenter.default.addObserver(
+                forName: UIApplication.didReceiveMemoryWarningNotification, object: nil,
+                queue: .main
+            ) { [weak self] _ in Task { @MainActor [weak self] in self?.handleMemoryPressure() } })
         appObservation = URNApplicationObservation { [weak self] foreground in
             guard let self else { return }
             for record in Array(self.records.values) {
@@ -86,6 +189,109 @@ import UIKit
                 self.publishLifecycle(record)
             }
         }
+    }
+
+    /// 创建真实RN Host；首次open直接消费，不创建临时测试Host。
+    @discardableResult public func openRoute(
+        _ url: URL, params: [String: Any] = [:], from source: UIViewController,
+        sourcePageId: String? = nil, completion: @escaping (Result<URNRouteOwner, Error>) -> Void
+    ) throws -> URNRouteOperation {
+        try configuration.validate()
+        guard state != .reloading, state != .stopping, state != .failed, let mixedRouter else {
+            throw URNContainerError("ROUTING_UNAVAILABLE", "宿主未接入混合路由或运行时忙碌")
+        }
+        mixedRouter.setDomain(environment.userDomain)
+        let actualSource = records.values.first(where: { $0.handle.controller === source })?.handle
+            .id
+        guard sourcePageId == nil || sourcePageId == actualSource else {
+            throw URNContainerError("INVALID_ROUTE_SOURCE", "来源页面不属于该controller")
+        }
+        return try mixedRouter.open(
+            url, params: params, source: actualSource, from: source, completion: completion)
+    }
+    private var moduleCompatibility: String {
+        configuration.baselineId + "|"
+            + configuration.modules.sorted { $0.featureId < $1.featureId }.map {
+                "\($0.featureId):\($0.version):\($0.paramsContract ?? "")"
+            }.joined(separator: ";")
+    }
+    /// 外部owner只能由可信宿主显式登记创建域；不能在capture时自动改标当前用户。
+    public func registerRestorationOwner(_ owner: URNRouteOwner, userDomain: String, route: String)
+        throws
+    {
+        guard let mixedRouter else { throw URNContainerError("ROUTING_UNAVAILABLE", "未接入宿主路由") }
+        try mixedRouter.registerRestorationOwner(owner, userDomain: userDomain, route: route)
+    }
+    public func captureRoutes(
+        _ pages: [URNRestorableRoute], completion: @escaping (Result<Data, Error>) -> Void
+    ) {
+        guard let mixedRouter else {
+            completion(.failure(URNContainerError("ROUTING_UNAVAILABLE", "未接入宿主路由")))
+            return
+        }
+        mixedRouter.setDomain(environment.userDomain)
+        mixedRouter.capture(
+            pages, baseline: configuration.baselineId, modules: moduleCompatibility,
+            completion: completion)
+    }
+    public func restoreRoutes(
+        read: (@escaping (Result<Data, Error>) -> Void) -> Void, from source: UIViewController,
+        completion: @escaping (Result<[URNRouteOwner], Error>) -> Void
+    ) {
+        guard let mixedRouter else {
+            completion(.failure(URNContainerError("ROUTING_UNAVAILABLE", "未接入宿主路由")))
+            return
+        }
+        mixedRouter.setDomain(environment.userDomain)
+        mixedRouter.restore(
+            read: read, baseline: configuration.baselineId, modules: moduleCompatibility,
+            from: source,
+            sourcePageId: records.values.first(where: { $0.handle.controller === source })?.handle
+                .id, completion: completion)
+    }
+    public func setRoutingReady(_ ready: Bool) { mixedRouter?.setReady(ready) }
+    public var pendingRouteCleanupCount: Int { mixedRouter?.pendingCleanupCount ?? 0 }
+    public func retryRouteCleanup(
+        sourcePageId: String? = nil, completion: @escaping (Result<Void, Error>) -> Void = { _ in }
+    ) {
+        mixedRouter?.retryCleanup(source: sourcePageId, completion: completion)
+            ?? completion(.success(()))
+    }
+    public func resetRouteCircuit() { mixedRouter?.resetCircuit() }
+
+    public func prewarm() throws {
+        try configuration.validate()
+        guard configuration.prewarmTTL > 0 else {
+            throw URNContainerError("PREWARM_DISABLED", "宿主未配置预热TTL")
+        }
+        guard records.isEmpty, state == .idle || state == .starting || state == .running,
+            !stoppingRuntime
+        else { throw URNContainerError("RUNTIME_BUSY", "活动或清理中Host不能预热") }
+        warmWork?.cancel()
+        warmExpiry = Date().addingTimeInterval(configuration.prewarmTTL)
+        let work = DispatchWorkItem { [weak self] in self?.handleMemoryPressure() }
+        warmWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + configuration.prewarmTTL, execute: work)
+        if state == .idle { startRuntime() }
+    }
+
+    public func handleMemoryPressure() {
+        guard records.isEmpty, warmExpiry != nil, !stoppingRuntime else { return }
+        warmWork?.cancel()
+        warmWork = nil
+        warmExpiry = nil
+        state = .stopping
+        advance()
+    }
+
+    public func updateEnvironment(_ snapshot: URNHostEnvironment) throws {
+        try snapshot.validate()
+        guard snapshot.revision > environment.revision else { return }
+        if snapshot.userDomain != environment.userDomain {
+            mixedRouter?.setDomain(snapshot.userDomain)
+        }
+        environment = snapshot
+        for record in records.values where !record.closing { publishEnvironment(record) }
     }
 
     public var channelBudgetSnapshot: [String: Int] { configuration.effectiveChannelBudget }
@@ -141,6 +347,13 @@ import UIKit
         guard data.count <= 256 * 1024,
             let snapshot = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         else { throw URNContainerError("INVALID_PARAMS", "页面参数超过预算") }
+        try URNModuleManifest.preflight(
+            featureId: featureId, modules: configuration.modules,
+            capabilities: configuration.availableCapabilities, baselineId: configuration.baselineId)
+        // 只有合法open才消费预热Host，活动/清理资源仍由原有记录持有。
+        warmExpiry = nil
+        warmWork?.cancel()
+        warmWork = nil
         let handle = URNPageHandle(id: UUID().uuidString, featureId: featureId)
         handle.coordinator = self
         let record = Record(handle: handle, params: snapshot, configuration: page, onReady: onReady)
@@ -178,9 +391,27 @@ import UIKit
         return handle
     }
 
+    private func routeCloseBarrier(
+        source: String?, completion: @escaping (Result<Void, Error>) -> Void
+    ) -> (Result<Void, Error>) -> Void {
+        let barrier = URNRouteCloseBarrier(completion)
+        if let mixedRouter {
+            routingCleanupPending += 1
+            mixedRouter.invalidate(source: source) { result in
+                self.routingCleanupPending -= 1
+                barrier.complete(0, result)
+                self.advance()
+            }
+        } else {
+            barrier.complete(0, .success(()))
+        }
+        return { barrier.complete(1, $0) }
+    }
+
     public func close(
         _ handle: URNPageHandle, completion: @escaping (Result<Void, Error>) -> Void = { _ in }
     ) {
+        let completion = routeCloseBarrier(source: handle.id, completion: completion)
         guard let record = records[handle.id], record.handle === handle else {
             completion(.success(()))
             return
@@ -219,12 +450,16 @@ import UIKit
     }
 
     public func closeAll(completion: @escaping (Result<Void, Error>) -> Void = { _ in }) {
+        let completion = routeCloseBarrier(source: nil, completion: completion)
         // 尚未确认启动的运行时可能已无页面记录；重复关闭必须返回同一个已知故障。
         if records.isEmpty, runtime != nil, !bundleBooted, let error = runtimeFailure {
             state = .failed
             completion(.failure(error))
             return
         }
+        warmExpiry = nil
+        warmWork?.cancel()
+        warmWork = nil
         shutdownCompletions.append(completion)
         state = .stopping
         if let reloadCompletion {
@@ -256,6 +491,7 @@ import UIKit
             completion(.failure(URNContainerError("NAVIGATION_BUSY", "请先完成或恢复导航关闭，再执行Reload")))
             return
         }
+        let completion = routeCloseBarrier(source: nil, completion: completion)
         // Reload复用Record，因此独立轮换导航epoch，不能只比较Record身份。
         for record in records.values {
             record.navigationEpoch = UUID()
@@ -384,6 +620,7 @@ import UIKit
                 allowedPermissions: record.configuration.allowedPermissions,
                 allowedEventTopics: record.configuration.allowedEventTopics)
             guard !record.closing, self.runtime === runtime else { return }
+            runtime.pageEnvironment = environment.json
             guard
                 let root = runtime.root(
                     forFeature: record.handle.featureId, params: record.params,
@@ -416,6 +653,7 @@ import UIKit
                 diagnostic("page.mounted", record: record, startedAt: record.openedAt)
             }
             record.mounted = true
+            publishEnvironment(record)
         case "startupFailed":
             // 失败组件也在 React effect 中报告，意味着 surface 已真实启动，可以安全卸载。
             record.mounted = true
@@ -527,6 +765,12 @@ import UIKit
         record.onReady = nil
         ready?(record.handle, .failure(URNContainerError("CANCELLED", "页面在 ready 前关闭")))
         beginCleanup(record)
+    }
+
+    func requiresCleanupRetry(_ handle: URNPageHandle) -> Bool {
+        guard let record = records[handle.id], record.handle === handle else { return false }
+        return record.nativeClosed && !record.cleanupDone && record.closeFailure != nil
+            && handle.state == .failed
     }
 
     public func retryCleanup(
@@ -672,7 +916,13 @@ import UIKit
     }
 
     private func advance() {
+        guard routingCleanupPending == 0 else { return }
         for record in Array(records.values) { advance(record) }
+        if records.isEmpty, let expiry = warmExpiry, expiry > Date(), state != .stopping,
+            state != .failed
+        {
+            return
+        }
         completeReloadIfReady()
         // 故障页面已显式重试并释放后，允许仍健康的同轮页面继续接入新页面。
         // Reload 失败会封闭全部页面，因此不会走这条局部恢复路径。
@@ -799,6 +1049,11 @@ import UIKit
         mount(record, runtime: runtime, generation: generation)
     }
 
+    private func publishEnvironment(_ record: Record) {
+        guard let address = record.address, !record.closing else { return }
+        emitPageEvent(address, ["type": "hostEnvironment", "snapshot": environment.json])
+    }
+
     private func publishLifecycle(_ record: Record) {
         guard let address = record.address, !record.closing else { return }
         record.lifecycleSeq += 1
@@ -828,6 +1083,34 @@ import UIKit
                 let value = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             else { throw URNContainerError("INVALID_NAVIGATION", "导航参数不合法") }
             switch command {
+            case "route":
+                guard !id.isEmpty, id.count <= 80, routeRequests.count < 64,
+                    let text = value["url"] as? String, let url = URL(string: text),
+                    let params = value["params"] as? [String: Any]
+                else { throw URNContainerError("INVALID_ROUTE", "深链参数非法") }
+                let key = "\(source.handle.id):\(id)"
+                var routeCompleted = false
+                let operation = try openRoute(
+                    url, params: params, from: source.handle.controller,
+                    sourcePageId: source.handle.id
+                ) { result in
+                    routeCompleted = true
+                    self.routeRequests.removeValue(forKey: key)
+                    switch result {
+                    case .success(let owner):
+                        self.emitPageEvent(
+                            address,
+                            [
+                                "type": "result", "id": id,
+                                "result": ["status": "completed", "data": ["pageId": owner.id]],
+                            ])
+                    case .failure(let error): self.navigationError(address, id: id, error: error)
+                    }
+                }
+                if !routeCompleted { routeRequests[key] = operation }
+            case "cancelRoute":
+                let key = "\(source.handle.id):\(id)"
+                routeRequests[key]?.cancel { _ in self.routeRequests.removeValue(forKey: key) }
             case "open":
                 guard !source.navigationRecoveryFailed, !source.openCancelled else {
                     throw URNContainerError("NAVIGATION_RECOVERY_REQUIRED", "当前页面正在等待导航恢复关闭")

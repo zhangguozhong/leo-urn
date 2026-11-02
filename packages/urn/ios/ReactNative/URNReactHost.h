@@ -24,6 +24,7 @@ NS_SWIFT_UI_ACTOR
 @property (nonatomic, copy, nullable) void (^onReloadRequested)(void);
 @property (nonatomic, copy, nullable) void (^onCommand)
     (NSString *channel, NSString *command, NSString *requestId, NSString *payload);
+@property (nonatomic, copy, nullable) NSDictionary *pageEnvironment;
 - (void)emitPageEvent:(NSString *)message channel:(NSString *)channel;
 - (void)start;
 - (BOOL)registerChannel:(NSString *)channel;
