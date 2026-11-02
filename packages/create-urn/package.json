@@ -1,8 +1,8 @@
 {
   "name": "create-leo-urn",
-  "version": "0.2.0-preview.2",
+  "version": "0.2.0-preview.3",
   "type": "module",
-  "description": "为已有原生App或独立调试壳创建固定基线的URN工程（iOS/Android）",
+  "description": "URN 工程脚手架，为 iOS/Android 原生 App 或独立调试壳创建 React Native 集成工程。",
   "license": "MIT",
   "bin": {
     "create-leo-urn": "bin/create-leo-urn.mjs"

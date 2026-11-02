@@ -1,6 +1,6 @@
 {
   "name": "leo-urn-source",
-  "version": "0.2.0-preview.2",
+  "version": "0.2.0-preview.3",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -14,7 +14,7 @@
     "@types/react": "19.2.3",
     "react": "19.2.3",
     "react-native": "0.87.0",
-    "aeris-client-core": "0.26.0-preview.1",
-    "aeris-react-native": "0.26.0-preview.1"
+    "aeris-client-core": "0.26.0-preview.2",
+    "aeris-react-native": "0.26.0-preview.2"
   }
 }

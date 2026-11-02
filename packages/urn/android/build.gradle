@@ -48,7 +48,7 @@ android {
     }
 }
 
-def aerisCoreVersion = providers.gradleProperty('aerisCoreVersion').orElse('0.26.0-preview.1').get()
+def aerisCoreVersion = providers.gradleProperty('aerisCoreVersion').orElse('0.26.0-preview.2').get()
 if (!(aerisCoreVersion ==~ /\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?/)) {
     throw new GradleException('aerisCoreVersion 必须为固定版本，不能使用动态版本或范围')
 }

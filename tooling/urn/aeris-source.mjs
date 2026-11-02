@@ -127,7 +127,7 @@ export async function ensureAerisSource(source, destination) {
       git(temporary, ['fetch', '--quiet', '--depth=1', '--no-tags', 'origin', ref]);
       git(temporary, ['checkout', '--quiet', '--detach', 'FETCH_HEAD']);
     } catch {
-      throw new Error('固定依赖准备失败：请检查本机 Git 私有仓库读取权限、远程地址和完整 commit');
+      throw new Error('固定依赖准备失败：请检查本机 Git 读取权限、远程地址和完整 commit');
     }
     await verifySource(temporary, ref, repository);
     await fs.rename(temporary, directory);

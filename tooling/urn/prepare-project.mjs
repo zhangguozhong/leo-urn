@@ -22,7 +22,7 @@ export async function fetchArtifact(item, from, destination, cwd) {
       );
       packed = JSON.parse(output).at(-1)?.filename;
     } catch {
-      throw new Error(`PREPARE: 无法取得 ${item.name} 固定制品；请检查 npm 私有仓库读取权限`);
+      throw new Error(`PREPARE: 无法取得 ${item.name} 固定制品；请检查 npm registry 访问权限`);
     }
     if (!packed || path.basename(packed) !== packed) throw new Error('PREPARE: npm 返回非法制品名');
     const packedPath = path.join(destination, packed);

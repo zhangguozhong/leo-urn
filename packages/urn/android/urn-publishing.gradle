@@ -1,7 +1,7 @@
 // 仅生成本地候选 AAR，不向公共 Maven 发布，也不改变 npm/Pod 版本。
 apply plugin: 'maven-publish'
 group = 'com.urn.sdk'
-version = '0.2.0-preview.1'
+version = '0.2.0-preview.3'
 android { publishing { singleVariant('release') { withSourcesJar() } } }
 publishing {
     repositories {
@@ -18,7 +18,7 @@ afterEvaluate {
             from components.release
             groupId = 'com.urn.sdk'
             artifactId = 'leo-urn'
-            version = '0.2.0-preview.1'
+            version = '0.2.0-preview.3'
             pom {
                 name = 'LeoURN Android candidate'
                 description = 'URN Android local validation artifact'

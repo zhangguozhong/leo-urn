@@ -4,14 +4,14 @@ const json = (value) => JSON.stringify(value, null, 2) + '\n';
 const plugins = [
   {
     name: 'leo-urn',
-    version: '0.2.0-preview.2',
-    pods: [{ name: 'LeoURN', version: '0.2.0-preview.2' }],
+    version: '0.2.0-preview.3',
+    pods: [{ name: 'LeoURN', version: '0.2.0-preview.3' }],
     codegen: { name: 'URNSpec', type: 'modules' },
   },
   {
     name: 'aeris-react-native',
-    version: '0.26.0-preview.1',
-    pods: [{ name: 'AerisRN', version: '0.26.0-preview.1' }],
+    version: '0.26.0-preview.2',
+    pods: [{ name: 'AerisRN', version: '0.26.0-preview.2' }],
     codegen: { name: 'NativeUnifiedBridgeSpec', type: 'modules' },
   },
 ];
@@ -47,7 +47,7 @@ export function templates({ profile, name, iosProject, target, hostFromApp, appF
       },
       dependencies: { react: '19.2.3', 'react-native': '0.87.0', ...deps },
       devDependencies: {
-        'leo-urn-tooling': 'file:.urn/packages/leo-urn-tooling-0.2.0-preview.2.tgz',
+        'leo-urn-tooling': 'file:.urn/packages/leo-urn-tooling-0.2.0-preview.3.tgz',
         '@react-native-community/cli': '20.2.0',
         '@react-native-community/cli-platform-ios': '20.2.0',
         '@react-native/metro-config': '0.87.0',
@@ -107,7 +107,7 @@ export function HomeScreen({ params, environment }: FeatureProps<{ message: stri
       '<key>URNBundleMode</key><string>$(URN_BUNDLE_MODE)</string>\n<key>URNBuildConfiguration</key><string>$(CONFIGURATION)</string>\n<key>URNBaselineId</key><string>$(URN_BASELINE_ID)</string>\n',
     'ios-integration/Podfile.example': `# 合并到原生工程的 Podfile，不能在本模板目录执行 pod install。\nrequire 'pathname'\napp_root = File.expand_path('${appFromHost}', __dir__)\nrn_manifest = Pod::Executable.execute_command('node', ['-p', 'require.resolve("react-native/package.json", {paths: [process.argv[1]]})', app_root]).strip\nrequire File.join(File.dirname(rn_manifest), 'scripts/react_native_pods')\nprepare_react_native_project!\nplatform :ios, '15.1'\nuse_frameworks! :linkage => :static\nproject '${iosProject.split('/').at(-1)}'\naeris = Pathname.new(File.join(app_root, '.urn/aeris')).relative_path_from(Pathname.new(__dir__)).to_s\ntarget '${target}' do\n  pod 'AerisContracts', :path => File.join(aeris, 'native/ios/contracts')\n  pod 'Aeris', :path => File.join(aeris, 'native/ios/aeris')\n  pod 'AerisHost', :path => File.join(aeris, 'native/ios/host')\n  config = Dir.chdir(app_root) { use_native_modules! }\n  use_react_native!(:path => config[:reactNativePath], :app_path => app_root)\n  post_install do |installer|\n    react_native_post_install(installer, config[:reactNativePath], :mac_catalyst_enabled => false)\n  end\nend\n`,
     'ios-integration/URNAppIntegration.swift': swiftIntegration(profile.baselineId),
-    'README.md': `# ${name}\n\n由 create-leo-urn 生成。iOS 15.1+，RN 0.87.0、React 19.2.3，单运行时、多页独立连接。\n\n## 首次安装与 CI\n\n即使没有 node_modules，也可以从工程根执行：\n\n\`\`\`sh\nnpm run prepare:urn\nnpm ci\nnpm run typecheck\nnpm run doctor\n\`\`\`\n\n首次还没有 package-lock.json 时把 npm ci 换为 npm install，审阅并提交锁。构建需要 devDependencies，不使用 --omit=dev。本地 profile 的制品路径必须能在该机器获取；CI 使用固定公共或私有制品/registry profile；公共依赖无需私有授权，私有依赖使用自己的 npm/Git 凭据。prepare 校验来源和摘要，恢复忽略的 .urn 缓存；不要删掉源制品本身。\n\n## 接入已有原生 App\n\n1. 按 ios-integration/Podfile.example 合并原有 Podfile，保留业务 Pods、target 和 post_install；URN/AerisRN 由 npm 自动链接，不重复安装同名库。\n2. 在原生工程目录 bundle exec pod install；首次先准备受支持的 Ruby/Gemfile/Bundler，CocoaPods 1.16.2。\n3. 把 ios-integration/URNAppIntegration.swift 加入 App target，在原生组装层创建并强持有一份，调用 openHome；不要另外启动默认 RN Factory。\n4. 将唯一 RN bundle phase 改为 bundle-phase.sh 的七行内容，Shell /bin/sh，取消 Based on dependency analysis；不要新增重复 phase；App target 的 ENABLE_USER_SCRIPT_SANDBOXING 设为 NO。\n5. 将 Info.plist.fragment 合并至真实 Info.plist；Build Settings 设置 URN_BUNDLE_MODE=embedded、URN_BASELINE_ID=${profile.baselineId}，App 最低 iOS 15.1。\n6. 本工程 npm start，Xcode Debug Run 环境 URN_BUNDLE_MODE=metro，Debug Info.plist 按 RN 模板设置 NSAppTransportSecurity/NSAllowsLocalNetworking=YES；真机可用 URN_METRO_URL 指向开发机 IP 和 index.container.bundle。\n7. pod install 完成后 npm run baseline:prepare；审阅生成的 platform-baseline.json，再 npm run baseline:check。基线已经存在时，使用 urn baseline --output platform-baseline.candidate.json，不自动覆盖旧基线。\n\n## 正式构建\n\nprepare → npm ci → 业务构建/类型检查 → pod install --deployment → doctor / baseline:check → 宿主自己的 Release build/archive → 断开 Metro 验收。工具不替你签名或导出 IPA。main.jsbundle/资源由唯一 phase 生成，当前无 OTA。\n\n## 页面与导航\n\n业务使用 environment.lifecycle.subscribe 监听页面显示／后台，使用 environment.navigation.open 等待目标页结果，navigation.close(data) 返回数据。局部错误页清理完成后可点击重试，只替换该页连接。宿主可配置 navigator、navigationPageConfiguration 和 pageUI。\n\n## 关闭\n\n正常导航 pop 自动清理；被遮挡、切后台不关闭。modal 的呈现方在 dismiss 完成后调用 coordinator.closePages(in:)。整体退出调用 closeAll 等待完成；业务 cleanup 要等真实资源释放，不能提前成功。\n\n## 生成边界\n\n命令只创建本工程和接入模板，没有修改原 App 的 Podfile、AppDelegate、签名或导航。原生工程：${iosProject}，target：${target}。依赖来源和摘要以 urn.profile.json 为准；公共发布 profile 使用公开 npm 和 aeris-sdk，.urn/aeris 是固定原生源码缓存，默认由 Pod :path 使用，也可将三个 Aeris Pod 改成同版本公开 Specs。URN 原生实现来自 node_modules/leo-urn，无需 vendor/urn。升级需要新的固定 profile，不能改用来源不一致的同号旧包。\n`,
+    'README.md': `# ${name}\n\n由 create-leo-urn 生成。iOS 15.1+，RN 0.87.0、React 19.2.3，单运行时、多页独立连接。\n\n## 首次安装与 CI\n\n即使没有 node_modules，也可以从工程根执行：\n\n\`\`\`sh\nnpm run prepare:urn\nnpm ci\nnpm run typecheck\nnpm run doctor\n\`\`\`\n\n首次还没有 package-lock.json 时把 npm ci 换为 npm install，审阅并提交锁。profile 锁定依赖来源和摘要；prepare 恢复 .urn 缓存；构建保留 devDependencies，不使用 --omit=dev。\n\n## 接入已有原生 App\n\n1. 按 ios-integration/Podfile.example 合并原有 Podfile，保留业务 Pods、target 和 post_install；URN/AerisRN 由 npm 自动链接，不重复安装同名库。\n2. 在原生工程目录 bundle exec pod install；首次先准备受支持的 Ruby/Gemfile/Bundler，CocoaPods 1.16.2。\n3. 把 ios-integration/URNAppIntegration.swift 加入 App target，在原生组装层创建并强持有一份，调用 openHome；不要另外启动默认 RN Factory。\n4. 将唯一 RN bundle phase 改为 bundle-phase.sh 的七行内容，Shell /bin/sh，取消 Based on dependency analysis；不要新增重复 phase；App target 的 ENABLE_USER_SCRIPT_SANDBOXING 设为 NO。\n5. 将 Info.plist.fragment 合并至真实 Info.plist；Build Settings 设置 URN_BUNDLE_MODE=embedded、URN_BASELINE_ID=${profile.baselineId}，App 最低 iOS 15.1。\n6. 本工程 npm start，Xcode Debug Run 环境 URN_BUNDLE_MODE=metro，Debug Info.plist 按 RN 模板设置 NSAppTransportSecurity/NSAllowsLocalNetworking=YES；真机可用 URN_METRO_URL 指向开发机 IP 和 index.container.bundle。\n7. pod install 完成后 npm run baseline:prepare；审阅生成的 platform-baseline.json，再 npm run baseline:check。基线已经存在时，使用 urn baseline --output platform-baseline.candidate.json，不自动覆盖旧基线。\n\n## 正式构建\n\nprepare → npm ci → 业务构建/类型检查 → pod install --deployment → doctor / baseline:check → 宿主自己的 Release build/archive → 断开 Metro 验收。工具不替你签名或导出 IPA。main.jsbundle/资源由唯一 phase 生成，当前无 OTA。\n\n## 页面与导航\n\n业务使用 environment.lifecycle.subscribe 监听页面显示／后台，使用 environment.navigation.open 等待目标页结果，navigation.close(data) 返回数据。局部错误页清理完成后可点击重试，只替换该页连接。宿主可配置 navigator、navigationPageConfiguration 和 pageUI。\n\n## 关闭\n\n正常导航 pop 自动清理；被遮挡、切后台不关闭。modal 的呈现方在 dismiss 完成后调用 coordinator.closePages(in:)。整体退出调用 closeAll 等待完成；业务 cleanup 要等真实资源释放，不能提前成功。\n\n## 生成边界\n\n命令只创建本工程和接入模板，没有修改原 App 的 Podfile、AppDelegate、签名或导航。原生工程：${iosProject}，target：${target}。依赖来源和摘要以 urn.profile.json 为准；公共发布 profile 使用公开 npm 和 aeris-sdk，.urn/aeris 是固定原生源码缓存，默认由 Pod :path 使用，也可将三个 Aeris Pod 改成同版本公开 Specs。URN 原生实现来自 node_modules/leo-urn，无需 vendor/urn。升级需要新的固定 profile，不能改用来源不一致的同号旧包。\n`,
   };
   return files;
 }

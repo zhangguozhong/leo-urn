@@ -1,6 +1,6 @@
 # URN SDK
 
-`leo-urn` 与同包的 `LeoURN.podspec` 提供 iOS 共享 RN Runtime 和独立页面连接。`0.2.0-preview.2` 为预览版本，首次分发使用 next；具体可用版本以 npm registry 与公开 Specs 索引为准。固定 React `19.2.3`、RN `0.87.0`、Hermes/Fabric、最低 iOS `15.1`，Aeris Core/RN 固定为 0.26.0-preview.1。
+`leo-urn` 为 iOS 和 Android 提供共享 RN 运行时、多页面导航、独立通信连接和页面生命周期管理。当前版本 `0.2.0-preview.3`，使用 React `19.2.3`、React Native `0.87.0`、Hermes/Fabric；最低 iOS `15.1`、Android API `24`，Aeris Core/RN 固定为 `0.26.0-preview.2`。
 
 SDK 源码位于 `packages/urn`。原生按 `Container`、`Routing`、`ReactNative`、`Modules` 分组；`URNReactHost` 封装 RN 宿主接线，JS 的 `PageCoordinator` 管理同一轮次的页面与关闭流程。它们是容器的内部实现，业务接入继续使用下文公开入口。
 
@@ -115,7 +115,7 @@ registerFeatures(registry, {
 
 logger 是项目提供的日志服务。诊断默认不含业务参数、回包、extra、原始错误和 featureId；业务 ID 只有在显式设置 includeFeatureIdsInDiagnostics 后包含。原生事件延后至主队列，JS 事件延后至微任务，观察器不拥有关闭屏障。Swift 非 throwing 回调不能恢复 fatalError 或进程异常。
 
-maxPages 决定本轮有效容量且不能大于 channelBudget.maxChannels。默认预算从同一个 JSON 生成三端代码，Native 在 JSI 初始化时注入快照；同轮 Fast Refresh 不修改它。`coordinator.channelBudgetSnapshot`、`coordinator.messageQueueSnapshot` 可查看数值，详细字段、范围和计量语义见设计文档。
+maxPages 决定本轮有效容量且不能大于 channelBudget.maxChannels。默认预算从同一个 JSON 生成三端代码，Native 在 JSI 初始化时注入快照；同轮 Fast Refresh 不修改它。`coordinator.channelBudgetSnapshot`、`coordinator.messageQueueSnapshot` 可查看数值，用于检查当前容器的容量和消息队列状态。
 
 上述隐私白名单仅适用于新的结构化诊断事件；旧 `onDiagnostic(code,message)` 和 `onError` 保留原始语义，宿主记录它们时仍需自行脱敏。
 
@@ -123,7 +123,7 @@ maxPages 决定本轮有效容量且不能大于 channelBudget.maxChannels。默
 
 `environment.lifecycle` 提供不可变 snapshot 与立即回放的 subscribe；`environment.navigation.open` 返回 completed/cancelled 结果，close(data) 在完成导航移除后回传。宿主配置 `navigator`、`navigationPageConfiguration` 与 `pageUI`。局部失败安全清理后 `handle.canRetry=true`，可 `handle.retry`；同 Handle/pageId 使用新 channel，兄弟页保留原 Client。`handle.finish(result:)` 提交结果并移除页面，`handle.close` 仍只负责资源清理。
 
-完整代码和边界见[页面生命周期、导航与重试接入指南](https://github.com/zhangguozhong/URN/blob/main/docs/URN页面生命周期与导航指南.md)。
+完整代码和边界见[页面生命周期、导航与重试接入指南](https://github.com/zhangguozhong/leo-urn#页面与生命周期)。
 
 ### 出站确认、首屏和导航恢复
 
@@ -131,8 +131,8 @@ maxPages 决定本轮有效容量且不能大于 channelBudget.maxChannels。默
 
 `onReady`等待通信成功和业务子树提交，握手阶段仍显示加载。首屏渲染错误或提交超时走单页失败与重试。
 
-`configuration.navigationTimeout`（默认15秒）保护宿主打开/关闭操作。`handle.navigationError`和`canRetryNavigationClose`表示UI仍待移除；恢复宿主导航后调用`handle.retryNavigationClose()`。关闭失败会向JS onError报告，不能将取消确认等同于UI关闭。参见[生命周期与导航指南](https://github.com/zhangguozhong/URN/blob/main/docs/URN页面生命周期与导航指南.md)。
+`configuration.navigationTimeout`（默认15秒）保护宿主打开/关闭操作。`handle.navigationError`和`canRetryNavigationClose`表示UI仍待移除；恢复宿主导航后调用`handle.retryNavigationClose()`。关闭失败会向JS onError报告，不能将取消确认等同于UI关闭。参见[生命周期与导航指南](https://github.com/zhangguozhong/leo-urn#页面与生命周期)。
 
 ## 安装包接入
 
-JS、类型、Codegen 和 iOS 源码随同一 `leo-urn` 包分发。Pod 使用 node_modules 中的 LeoURN.podspec 自动链接，不要再手动引入另一版本的 URN Pod。预览版使用说明见[公开源码仓库](https://github.com/zhangguozhong/leo-urn)。
+JS、类型、Codegen 以及 iOS/Android 原生源码随同一 `leo-urn` 包分发。Pod 使用 node_modules 中的 LeoURN.podspec 自动链接，不要再手动引入另一版本的 URN Pod。预览版使用说明见[公开源码仓库](https://github.com/zhangguozhong/leo-urn)。

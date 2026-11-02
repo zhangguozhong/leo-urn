@@ -2,10 +2,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 export const versions = Object.freeze({
-  'leo-urn': '0.2.0-preview.2',
-  'leo-urn-tooling': '0.2.0-preview.2',
-  'aeris-client-core': '0.26.0-preview.1',
-  'aeris-react-native': '0.26.0-preview.1',
+  'leo-urn': '0.2.0-preview.3',
+  'leo-urn-tooling': '0.2.0-preview.3',
+  'aeris-client-core': '0.26.0-preview.2',
+  'aeris-react-native': '0.26.0-preview.2',
 });
 const fail = (message) => {
   throw new Error(`PROFILE: ${message}`);
@@ -48,12 +48,12 @@ export function validateProfile(profile) {
       name,
       version,
     );
-  validateArtifact(profile.bootstrap, 'create-leo-urn', '0.2.0-preview.2');
+  validateArtifact(profile.bootstrap, 'create-leo-urn', '0.2.0-preview.3');
   const cap = profile.aeris;
   if (
     !/^[a-f0-9]{40}$/.test(cap?.source?.ref ?? '') ||
     typeof cap.source.repository !== 'string' ||
-    cap.nativeVersion !== '0.26.0-preview.1' ||
+    cap.nativeVersion !== '0.26.0-preview.2' ||
     cap.closing?.verified !== true ||
     cap.closing.protocol !== 'AerisClosingMessageReceiver'
   )

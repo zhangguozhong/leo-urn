@@ -9,9 +9,9 @@ import { validateProfile } from './profile.mjs';
 const fixed = Object.freeze({
   react: '19.2.3',
   'react-native': '0.87.0',
-  'leo-urn': '0.2.0-preview.2',
-  'aeris-client-core': '0.26.0-preview.1',
-  'aeris-react-native': '0.26.0-preview.1',
+  'leo-urn': '0.2.0-preview.3',
+  'aeris-client-core': '0.26.0-preview.2',
+  'aeris-react-native': '0.26.0-preview.2',
 });
 const probeScript = fileURLToPath(new URL('./android-probe.gradle', import.meta.url));
 const fail = (message) => {
